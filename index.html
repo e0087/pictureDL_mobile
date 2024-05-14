@@ -6,12 +6,18 @@
   <title>画像表示ページ</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Arial', sans-serif;
       text-align: center;
-      margin: 50px;
+      margin: 20px;
+      background-color: #f0f0f0;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
     h1 {
       margin-bottom: 20px;
+      color: #555;
     }
     .hidden-link {
       position: absolute;
@@ -25,54 +31,78 @@
       position: relative;
       margin-top: 20px;
       display: inline-block;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      overflow: hidden;
+      background-color: #fff;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
     img {
       max-width: 100%;
       height: auto;
+      display: block;
     }
     .imageNumber {
       position: absolute;
       top: 0;
       left: 0;
-      background-color: rgba(255, 255, 255, 0.7);
+      background-color: rgba(0, 0, 0, 0.7);
+      color: #fff;
       padding: 5px;
-      border-radius: 5px;
-      font-size: 2.5em;
+      border-bottom-right-radius: 10px;
     }
-    #textInput,
-    #pageInput {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 8px;
+    #textInput {
+      width: calc(100% - 20px);
+      max-width: 600px;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    #errorContainer {
+      color: red;
       margin-bottom: 10px;
     }
-    #pageInput {
-      max-width: 70px;
-    }
     #usageBox {
-      border: 2px solid #ddd;
-      background-color: #f9f9f9;
+      width: calc(100% - 20px);
+      max-width: 600px;
+      border: 1px solid #ddd;
+      background-color: #fff;
       padding: 15px;
       border-radius: 10px;
-      margin-top: 10px;
+      margin-bottom: 20px;
       text-align: left;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
     ol {
       margin: 0;
       padding-left: 20px;
     }
-    #reloadButton {
-      position: fixed;
-      right: 10px;
-      bottom: 10px;
-      width: 100px;
-      height: 40px;
-      line-height: 40px;
-      background-color: rgba(85, 85, 85, 0.719);
+    button {
+      background-color: #007bff;
       color: white;
       border: none;
+      padding: 10px 20px;
       border-radius: 5px;
       cursor: pointer;
+      transition: background-color 0.3s;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    summary {
+      font-size: 120%;
+      cursor: pointer;
+    }
+    @media (max-width: 600px) {
+      body {
+        margin: 10px;
+      }
+      #textInput, #usageBox {
+        width: calc(100% - 20px);
+      }
     }
   </style>
 </head>
@@ -82,79 +112,75 @@
   <a href="https://nhentai.net/" target="_blank" class="hidden-link">Hidden Link</a>
 
   <div id="usageBox">
-    <p><strong>使用方法:</strong></p>
-    <ol>
-      <li>対象画像サイトの1ページ目の画像を右クリックし、「画像のリンクをコピー」を押下。</li>
-      <li>「画像URL入力フォーム」にペースト。</li>
-      <li>対象画像サイトの最大ページ数を下の「指定ページ数」に入力。</li>
-      <li>「画像表示」ボタンを押下します。</li>
-      <li>「再読み込み」ボタンを押下し、すべての画像が表示されていることを確認</li>
-      <li>何もないところで右クリックし「名前を付けて保存」を選択。</li>
-      <li>ダウンロードの「画像表示ページ_files」フォルダに画像が保存されるので、中身を切り取りして別フォルダへペースト。</li>
-    </ol>
+    <details>
+      <summary><strong>使用方法</strong></summary>
+      <ol>
+        <li>対象画像サイトの1ページ目の画像を右クリックし、「画像のリンクをコピー」を押下。</li>
+        <li>「画像URL入力フォーム」にペースト。</li>
+        <li>「画像表示」ボタンを押下。</li>
+        <li>「再読み込み」ボタンを押下し、すべての画像が表示されていることを確認。</li>
+        <li>何もないところで右クリックし「名前を付けて保存」を選択。</li>
+        <li>ダウンロードの「画像表示ページ_files」フォルダに画像が保存されるので、中身を切り取りして別フォルダへペースト。</li>
+      </ol>
+    </details>
   </div>
 
-  <label for="textInput">画像URL入力フォーム:</label>
   <input type="text" id="textInput" placeholder="画像URLを入力">
-
-  <label for="pageInput">指定ページ数:</label>
-  <input type="number" id="pageInput" placeholder="ページ数" max="999">
-
+  <div id="errorContainer"></div>
   <button onclick="displayImages()">画像表示</button>
 
   <div id="imageContainer"></div>
-  <div id="errorContainer"></div>
-
-  <button id="reloadButton" onclick="checkLoadingStatus()">再読み込み</button>
 
   <script>
     function displayImages() {
-      var inputText = document.getElementById("textInput").value;
+      var inputText = document.getElementById("textInput").value.trim();
 
-      if (!inputText.endsWith("1.jpg")) {
-        document.getElementById("errorContainer").innerHTML = "画像URLを入力してください。";
+      if (!inputText.match(/\.(jpg|jpeg|png)$/i)) {
+        document.getElementById("errorContainer").innerText = "画像URLを入力してください。";
         return;
       } else {
-        document.getElementById("errorContainer").innerHTML = "";
+        document.getElementById("errorContainer").innerText = "";
       }
 
-      var baseInputText = inputText.slice(0, -5);
-      var pageCount = parseInt(document.getElementById("pageInput").value);
+      var baseInputText = inputText.slice(0, inputText.lastIndexOf('.') - 1);
+      var extension = inputText.slice(inputText.lastIndexOf('.')).toLowerCase();
+      var extensions = ['.jpg', '.png', '.jpeg'];
       var imageContainer = document.getElementById("imageContainer");
+      var i = 1;
+      var j = 0;
 
       imageContainer.innerHTML = "";
 
-      for (var i = 1; i <= pageCount; i++) {
-        var imageUrl = baseInputText + i + ".jpg";
-        var container = document.createElement("div");
-        container.className = "imageContainer";
-        var imgElement = document.createElement("img");
-        imgElement.src = imageUrl;
-        var numberElement = document.createElement("div");
-        numberElement.className = "imageNumber";
-        numberElement.innerHTML = i;
+      function checkAndDisplayImage() {
+        if (j >= extensions.length) return;
 
-        container.appendChild(imgElement);
-        container.appendChild(numberElement);
-        imageContainer.appendChild(container);
+        var imageUrl = baseInputText + i + extension;
+        var img = new Image();
+        img.onload = function() {
+          var container = document.createElement("div");
+          container.className = "imageContainer";
+          var imgElement = document.createElement("img");
+          imgElement.src = imageUrl;
+          var numberElement = document.createElement("div");
+          numberElement.className = "imageNumber";
+          numberElement.innerHTML = i;
+
+          container.appendChild(imgElement);
+          container.appendChild(numberElement);
+          imageContainer.appendChild(container);
+          i++;
+          j = 0;
+          checkAndDisplayImage();
+        };
+        img.onerror = function() {
+          j++;
+          extension = extensions[j] || extension;
+          checkAndDisplayImage();
+        };
+        img.src = imageUrl;
       }
-    }
 
-    function checkLoadingStatus() {
-      var images = document.querySelectorAll("#imageContainer img");
-      var unloadedImageCount = 0;
-
-      images.forEach(function(img) {
-        if (!img.complete || img.naturalWidth === 0) {
-          unloadedImageCount++;
-        }
-      });
-
-      if (unloadedImageCount > 0) {
-        displayImages();
-      } else {
-        alert("読み込み完了");
-      }
+      checkAndDisplayImage();
     }
   </script>
 
