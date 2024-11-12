@@ -51,22 +51,43 @@
       padding: 5px;
       border-bottom-right-radius: 10px;
     }
-    #textInput {
-      width: calc(100% - 20px);
-      max-width: 600px;
-      padding: 10px;
+    .input-group, .button-group {
+      width: 100%;
+      max-width: 730px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       margin: 10px 0;
+    }
+    .input-group input, .button-group input {
+      flex: 1;
+      padding: 10px;
+      margin-right: 10px;
       border: 1px solid #ddd;
       border-radius: 5px;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .input-group button, .button-group button {
+      flex: 1;
+      max-width: 120px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      background-color: #007bff;
+      color: white;
+    }
+    .input-group button:hover, .button-group button:hover {
+      background-color: #0056b3;
     }
     #errorContainer {
       color: red;
       margin-bottom: 10px;
     }
     #usageBox {
-      width: calc(100% - 20px);
-      max-width: 600px;
+      width: 100%;
+      max-width: 700px;
       border: 1px solid #ddd;
       background-color: #fff;
       padding: 15px;
@@ -79,19 +100,6 @@
       margin: 0;
       padding-left: 20px;
     }
-    button {
-      background-color: #007bff;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: background-color 0.3s;
-      margin-top: 10px;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
     summary {
       font-size: 120%;
       cursor: pointer;
@@ -100,14 +108,49 @@
       body {
         margin: 10px;
       }
-      #textInput, #usageBox {
-        width: calc(100% - 20px);
+      .input-group, .button-group, #usageBox {
+        width: 100%;
       }
+    }
+    #loader {
+      display: none;
+      border: 8px solid #f3f3f3;
+      border-radius: 50%;
+      border-top: 8px solid #3498db;
+      width: 60px;
+      height: 60px;
+      animation: spin-right 2s linear infinite;
+      margin: 20px auto;
+      position: relative;
+    }
+
+    #progress {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.2em;
+      color: #3498db;
+      /* 中の要素にアニメーションを適用する */
+    }
+
+    #progress span {
+      display: inline-block;
+      animation: spin-left 2s linear infinite; /* 左回転 */
+    }
+
+    @keyframes spin-right {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes spin-left {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(-360deg); }
     }
   </style>
 </head>
 <body>
-
   <h1>画像表示ページ</h1>
   <a href="https://nhentai.net/" target="_blank" class="hidden-link">Hidden Link</a>
 
@@ -118,25 +161,41 @@
         <li>対象画像サイトの1ページ目の画像を右クリックし、「画像のリンクをコピー」を押下。</li>
         <li>「画像URL入力フォーム」にペースト。</li>
         <li>「画像表示」ボタンを押下。</li>
-        <li>「再読み込み」ボタンを押下し、すべての画像が表示されていることを確認。</li>
-        <li>何もないところで右クリックし「名前を付けて保存」を選択。</li>
-        <li>ダウンロードの「画像表示ページ_files」フォルダに画像が保存されるので、中身を切り取りして別フォルダへペースト。</li>
+        <li>「ダウンロード」ボタンを押下し、すべての画像が保存されます。</li>
       </ol>
     </details>
   </div>
 
-  <input type="text" id="textInput" placeholder="画像URLを入力">
+  <div class="input-group">
+    <input type="text" id="textInput" placeholder="画像URLを入力">
+    <button onclick="displayImages()">画像表示</button>
+  </div>
+  <div class="input-group">
+    <input type="text" id="zipFileNameInput" placeholder="zipファイル名(オプション)">
+    <button onclick="downloadImages()">ダウンロード</button>
+  </div>
   <div id="errorContainer"></div>
-  <button onclick="displayImages()">画像表示</button>
+  <div id="loader">
+    <div id="progress">0%</div>
+  </div>
 
   <div id="imageContainer"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/jszip/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver/dist/FileSaver.min.js"></script>
+
   <script>
     function displayImages() {
+      var loader = document.getElementById("loader");
+      var progress = document.getElementById("progress");
+      loader.style.display = "block";
+      progress.style.display = "none"; // パーセント表示を隠す
+
       var inputText = document.getElementById("textInput").value.trim();
 
       if (!inputText.match(/\.(jpg|jpeg|png)$/i)) {
         document.getElementById("errorContainer").innerText = "画像URLを入力してください。";
+        loader.style.display = "none";
         return;
       } else {
         document.getElementById("errorContainer").innerText = "";
@@ -152,7 +211,10 @@
       imageContainer.innerHTML = "";
 
       function checkAndDisplayImage() {
-        if (j >= extensions.length) return;
+        if (j >= extensions.length) {
+          loader.style.display = "none";
+          return;
+        }
 
         var imageUrl = baseInputText + i + extension;
         var img = new Image();
@@ -181,6 +243,38 @@
       }
 
       checkAndDisplayImage();
+    }
+
+    async function downloadImages() {
+      var loader = document.getElementById("loader");
+      var progress = document.getElementById("progress");
+      loader.style.display = "block"; // ロード表示を開始
+      progress.style.display = "block"; // パーセント表示を表示
+
+      var imageContainer = document.getElementById("imageContainer");
+      var images = imageContainer.getElementsByTagName("img");
+      var zip = new JSZip();
+      var zipFileName = document.getElementById("zipFileNameInput").value.trim() || "images";
+      var totalImages = images.length;
+
+      for (var i = 0; i < totalImages; i++) {
+        var imageUrl = images[i].src;
+        var response = await fetch(imageUrl, { mode: 'cors' });
+        var blob = await response.blob();
+        var imgName = (i + 1) + '.jpg';
+        zip.file(imgName, blob);
+
+        var progressPercent = Math.round(((i + 1) / totalImages) * 100);
+        progress.innerText = progressPercent + "%";
+      }
+
+      zip.generateAsync({ type: "blob" }).then(function(content) {
+        saveAs(content, zipFileName + ".zip");
+        loader.style.display = "none"; // ロード表示を終了
+      }).catch(function(error) {
+        console.error("Error creating zip file: ", error);
+        loader.style.display = "none"; // ロード表示を終了
+      });
     }
   </script>
 
