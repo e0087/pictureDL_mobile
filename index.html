@@ -193,7 +193,7 @@
 
       var inputText = document.getElementById("textInput").value.trim();
 
-      if (!inputText.match(/\.(jpg|jpeg|png)$/i)) {
+      if (!inputText.match(/\.(jpg|jpeg|png|webp)$/i)) {
         document.getElementById("errorContainer").innerText = "画像URLを入力してください。";
         loader.style.display = "none";
         return;
@@ -203,7 +203,7 @@
 
       var baseInputText = inputText.slice(0, inputText.lastIndexOf('.') - 1);
       var extension = inputText.slice(inputText.lastIndexOf('.')).toLowerCase();
-      var extensions = ['.jpg', '.png', '.jpeg'];
+      var extensions = ['.jpg', '.png', '.jpeg', '.webp'];
       var imageContainer = document.getElementById("imageContainer");
       var i = 1;
       var j = 0;
