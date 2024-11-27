@@ -113,40 +113,55 @@
       }
     }
     #loader {
-      display: none;
-      border: 8px solid #f3f3f3;
+  display: none;
+  width: 100px;
+  height: 100px;
+  position: relative;
+  margin: 20px auto;
+}
+
+.progress-circle {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: conic-gradient(#3498db 0% calc(var(--progress) * 1%), #ddd calc(var(--progress) * 1%) 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 20px;
+  font-weight: bold;
+  color: #3498db;
+}
+
+.progress-circle::before {
+  content: "";
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.progress-text {
+  position: relative;
+}
+.fixed-loder {
+  display: none;
+    position: fixed;
+      border: 8px solid #ddd;
       border-radius: 50%;
       border-top: 8px solid #3498db;
-      width: 60px;
-      height: 60px;
+      width: 35px;
+      height: 35px;
+      bottom: 0;
+    right: 0;
+    overflow: auto;
       animation: spin-right 2s linear infinite;
-      margin: 20px auto;
-      position: relative;
-    }
-
-    #progress {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 1.2em;
-      color: #3498db;
-      /* 中の要素にアニメーションを適用する */
-    }
-
-    #progress span {
-      display: inline-block;
-      animation: spin-left 2s linear infinite; /* 左回転 */
-    }
-
-    @keyframes spin-right {
+  }
+  @keyframes spin-right {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
-    }
-
-    @keyframes spin-left {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(-360deg); }
     }
   </style>
 </head>
@@ -161,7 +176,7 @@
         <li>対象画像サイトの1ページ目の画像を右クリックし、「画像のリンクをコピー」を押下。</li>
         <li>「画像URL入力フォーム」にペースト。</li>
         <li>「画像表示」ボタンを押下。</li>
-        <li>「ダウンロード」ボタンを押下し、すべての画像が保存されます。</li>
+        <li>「一括保存」ボタンを押下し、すべての画像が保存されます。</li>
       </ol>
     </details>
   </div>
@@ -172,110 +187,129 @@
   </div>
   <div class="input-group">
     <input type="text" id="zipFileNameInput" placeholder="zipファイル名(オプション)">
-    <button onclick="downloadImages()">ダウンロード</button>
+    <button onclick="downloadImages()">一括保存</button>
   </div>
   <div id="errorContainer"></div>
   <div id="loader">
-    <div id="progress">0%</div>
+    <div class="progress-circle" data-progress="0">
+      <span class="progress-text">0%</span>
+    </div>
   </div>
 
   <div id="imageContainer"></div>
+
+  <div class="fixed-loder"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/jszip/dist/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/file-saver/dist/FileSaver.min.js"></script>
 
   <script>
-    function displayImages() {
-      var loader = document.getElementById("loader");
-      var progress = document.getElementById("progress");
-      loader.style.display = "block";
-      progress.style.display = "none"; // パーセント表示を隠す
+    document.addEventListener("DOMContentLoaded", function () {
+  const progressCircle = document.querySelector('.progress-circle');
+  const progressText = document.querySelector('.progress-text');
+  const loader = document.getElementById("loader");
+  const fixedLoder = document.querySelector('.fixed-loder');
 
-      var inputText = document.getElementById("textInput").value.trim();
+  function setProgress(value) {
+    progressCircle.style.setProperty('--progress', value);
+    progressText.textContent = `${value}%`;
+  }
 
-      if (!inputText.match(/\.(jpg|jpeg|png|webp)$/i)) {
-        document.getElementById("errorContainer").innerText = "画像URLを入力してください。";
+  function displayImages() {
+    loader.style.display = "none";
+    fixedLoder.style.display = "block";
+    progressText.style.display = "none"; // パーセント表示を隠す
+    setProgress(0); // 進捗をリセット
+
+    var inputText = document.getElementById("textInput").value.trim();
+
+    if (!inputText.match(/\.(jpg|jpeg|png|webp)$/i)) {
+      document.getElementById("errorContainer").innerText = "画像URLを入力してください。";
+      loader.style.display = "none";
+      fixedLoder.style.display = "none";
+      return;
+    } else {
+      document.getElementById("errorContainer").innerText = "";
+    }
+
+    var baseInputText = inputText.slice(0, inputText.lastIndexOf('.') - 1);
+    var extension = inputText.slice(inputText.lastIndexOf('.')).toLowerCase();
+    var extensions = ['.jpg', '.png', '.jpeg', '.webp'];
+    var imageContainer = document.getElementById("imageContainer");
+    var i = 1;
+    var j = 0;
+
+    imageContainer.innerHTML = "";
+
+    function checkAndDisplayImage() {
+      if (j >= extensions.length) {
         loader.style.display = "none";
+        fixedLoder.style.display = "none";
         return;
-      } else {
-        document.getElementById("errorContainer").innerText = "";
       }
 
-      var baseInputText = inputText.slice(0, inputText.lastIndexOf('.') - 1);
-      var extension = inputText.slice(inputText.lastIndexOf('.')).toLowerCase();
-      var extensions = ['.jpg', '.png', '.jpeg', '.webp'];
-      var imageContainer = document.getElementById("imageContainer");
-      var i = 1;
-      var j = 0;
+      var imageUrl = baseInputText + i + extension;
+      var img = new Image();
+      img.onload = function() {
+        var container = document.createElement("div");
+        container.className = "imageContainer";
+        var imgElement = document.createElement("img");
+        imgElement.src = imageUrl;
+        var numberElement = document.createElement("div");
+        numberElement.className = "imageNumber";
+        numberElement.innerHTML = i;
 
-      imageContainer.innerHTML = "";
-
-      function checkAndDisplayImage() {
-        if (j >= extensions.length) {
-          loader.style.display = "none";
-          return;
-        }
-
-        var imageUrl = baseInputText + i + extension;
-        var img = new Image();
-        img.onload = function() {
-          var container = document.createElement("div");
-          container.className = "imageContainer";
-          var imgElement = document.createElement("img");
-          imgElement.src = imageUrl;
-          var numberElement = document.createElement("div");
-          numberElement.className = "imageNumber";
-          numberElement.innerHTML = i;
-
-          container.appendChild(imgElement);
-          container.appendChild(numberElement);
-          imageContainer.appendChild(container);
-          i++;
-          j = 0;
-          checkAndDisplayImage();
-        };
-        img.onerror = function() {
-          j++;
-          extension = extensions[j] || extension;
-          checkAndDisplayImage();
-        };
-        img.src = imageUrl;
-      }
-
-      checkAndDisplayImage();
+        container.appendChild(imgElement);
+        container.appendChild(numberElement);
+        imageContainer.appendChild(container);
+        i++;
+        j = 0;
+        checkAndDisplayImage();
+      };
+      img.onerror = function() {
+        j++;
+        extension = extensions[j] || extension;
+        checkAndDisplayImage();
+      };
+      img.src = imageUrl;
     }
 
-    async function downloadImages() {
-      var loader = document.getElementById("loader");
-      var progress = document.getElementById("progress");
-      loader.style.display = "block"; // ロード表示を開始
-      progress.style.display = "block"; // パーセント表示を表示
+    checkAndDisplayImage();
+  }
 
-      var imageContainer = document.getElementById("imageContainer");
-      var images = imageContainer.getElementsByTagName("img");
-      var zip = new JSZip();
-      var zipFileName = document.getElementById("zipFileNameInput").value.trim() || "images";
-      var totalImages = images.length;
+  async function downloadImages() {
+    loader.style.display = "block"; // ロード表示を開始
+    progressText.style.display = "block"; // パーセント表示を表示
+    fixedLoder.style.display = "none";
 
-      for (var i = 0; i < totalImages; i++) {
-        var imageUrl = images[i].src;
-        var response = await fetch(imageUrl, { mode: 'cors' });
-        var blob = await response.blob();
-        var imgName = (i + 1) + '.jpg';
-        zip.file(imgName, blob);
+    var imageContainer = document.getElementById("imageContainer");
+    var images = imageContainer.getElementsByTagName("img");
+    var zip = new JSZip();
+    var zipFileName = document.getElementById("zipFileNameInput").value.trim() || "images";
+    var totalImages = images.length;
 
-        var progressPercent = Math.round(((i + 1) / totalImages) * 100);
-        progress.innerText = progressPercent + "%";
-      }
+    for (var i = 0; i < totalImages; i++) {
+      var imageUrl = images[i].src;
+      var response = await fetch(imageUrl, { mode: 'cors' });
+      var blob = await response.blob();
+      var imgName = (i + 1) + '.jpg';
+      zip.file(imgName, blob);
 
-      zip.generateAsync({ type: "blob" }).then(function(content) {
-        saveAs(content, zipFileName + ".zip");
-        loader.style.display = "none"; // ロード表示を終了
-      }).catch(function(error) {
-        console.error("Error creating zip file: ", error);
-        loader.style.display = "none"; // ロード表示を終了
-      });
+      var progressPercent = Math.round(((i + 1) / totalImages) * 100);
+      setProgress(progressPercent);
     }
+
+    zip.generateAsync({ type: "blob" }).then(function(content) {
+      saveAs(content, zipFileName + ".zip");
+      loader.style.display = "none"; // ロード表示を終了
+    }).catch(function(error) {
+      console.error("Error creating zip file: ", error);
+      loader.style.display = "none"; // ロード表示を終了
+    });
+  }
+  window.displayImages = displayImages;
+  window.downloadImages = downloadImages;
+});
   </script>
 
 </body>
