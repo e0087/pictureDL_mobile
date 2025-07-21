@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,10 +16,12 @@
       flex-direction: column;
       align-items: center;
     }
+
     h1 {
       margin-bottom: 20px;
       color: #555;
     }
+
     .hidden-link {
       position: absolute;
       right: 0;
@@ -27,6 +30,7 @@
       text-decoration: none;
       color: transparent;
     }
+
     .imageContainer {
       position: relative;
       margin-top: 20px;
@@ -37,11 +41,13 @@
       background-color: #fff;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
+
     img {
       max-width: 100%;
       height: auto;
       display: block;
     }
+
     .imageNumber {
       position: absolute;
       top: 0;
@@ -51,7 +57,9 @@
       padding: 5px;
       border-bottom-right-radius: 10px;
     }
-    .input-group, .button-group {
+
+    .input-group,
+    .button-group {
       width: 100%;
       max-width: 730px;
       display: flex;
@@ -59,7 +67,9 @@
       justify-content: center;
       margin: 10px 0;
     }
-    .input-group input, .button-group input {
+
+    .input-group input,
+    .button-group input {
       flex: 1;
       padding: 10px;
       margin-right: 10px;
@@ -67,7 +77,9 @@
       border-radius: 5px;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
-    .input-group button, .button-group button {
+
+    .input-group button,
+    .button-group button {
       flex: 1;
       max-width: 120px;
       padding: 10px 20px;
@@ -78,13 +90,17 @@
       background-color: #007bff;
       color: white;
     }
-    .input-group button:hover, .button-group button:hover {
+
+    .input-group button:hover,
+    .button-group button:hover {
       background-color: #0056b3;
     }
+
     #errorContainer {
       color: red;
       margin-bottom: 10px;
     }
+
     #usageBox {
       width: 100%;
       max-width: 700px;
@@ -96,75 +112,126 @@
       text-align: left;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
+
     ol {
       margin: 0;
       padding-left: 20px;
     }
+
     summary {
       font-size: 120%;
       cursor: pointer;
     }
-    @media (max-width: 600px) {
-      body {
-        margin: 10px;
-      }
-      .input-group, .button-group, #usageBox {
-        width: 100%;
-      }
+
+    /* toggle switch */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 26px;
+      margin-left: 8px;
+      vertical-align: middle;
     }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      border-radius: 13px;
+      transition: .4s;
+    }
+
+    .slider::before {
+      position: absolute;
+      content: "";
+      height: 22px;
+      width: 22px;
+      left: 2px;
+      bottom: 2px;
+      background-color: white;
+      border-radius: 50%;
+      transition: .4s;
+    }
+
+    input:checked+.slider {
+      background-color: #007bff;
+    }
+
+    input:checked+.slider::before {
+      transform: translateX(24px);
+    }
+
+    /* loader */
     #loader {
-  display: none;
-  width: 100px;
-  height: 100px;
-  position: relative;
-  margin: 20px auto;
-}
+      display: none;
+      width: 100px;
+      height: 100px;
+      position: relative;
+      margin: 20px auto;
+    }
 
-.progress-circle {
-  position: relative;
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  background: conic-gradient(#3498db 0% calc(var(--progress) * 1%), #ddd calc(var(--progress) * 1%) 100%);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 20px;
-  font-weight: bold;
-  color: #3498db;
-}
+    .progress-circle {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: conic-gradient(#3498db 0% calc(var(--progress) * 1%), #ddd calc(var(--progress) * 1%) 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 20px;
+      font-weight: bold;
+      color: #3498db;
+    }
 
-.progress-circle::before {
-  content: "";
-  position: absolute;
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: #fff;
-}
+    .progress-circle::before {
+      content: "";
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #fff;
+    }
 
-.progress-text {
-  position: relative;
-}
-.fixed-loder {
-  display: none;
-    position: fixed;
+    .progress-text {
+      position: relative;
+    }
+
+    .fixed-loder {
+      display: none;
+      position: fixed;
       border: 8px solid #ddd;
       border-radius: 50%;
       border-top: 8px solid #3498db;
       width: 35px;
       height: 35px;
       bottom: 0;
-    right: 0;
-    overflow: auto;
+      right: 0;
       animation: spin-right 2s linear infinite;
-  }
-  @keyframes spin-right {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes spin-right {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
     }
   </style>
 </head>
+
 <body>
   <h1>画像表示ページ</h1>
   <a href="https://nhentai.net/" target="_blank" class="hidden-link">Hidden Link</a>
@@ -178,15 +245,18 @@
         <li>「画像表示」ボタンを押下。</li>
         <li>「一括保存」ボタンを押下し、すべての画像が保存されます。</li>
       </ol>
-    </details>
+      <div style="margin-top:10px;"><strong>▼モード切替</strong></div>
+      <label class="switch"><input type="checkbox" id="linkToggle"><span class="slider"></span></label> リンク表示モード
+  </div>
+  </details>
   </div>
 
   <div class="input-group">
-    <input type="text" id="textInput" placeholder="画像URLを入力">
-    <button onclick="displayImages()">画像表示</button>
+    <input type="search" id="textInput" placeholder="画像URLを入力">
+    <button onclick="processDisplay()">画像表示</button>
   </div>
   <div class="input-group">
-    <input type="text" id="zipFileNameInput" placeholder="zipファイル名(オプション)">
+    <input type="search" id="zipFileNameInput" placeholder="zipファイル名(オプション)">
     <button onclick="downloadImages()">一括保存</button>
   </div>
   <div id="errorContainer"></div>
@@ -195,122 +265,172 @@
       <span class="progress-text">0%</span>
     </div>
   </div>
-
-  <div id="imageContainer"></div>
-
   <div class="fixed-loder"></div>
+  <div id="imageContainer"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/jszip/dist/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/file-saver/dist/FileSaver.min.js"></script>
 
   <script>
     document.addEventListener("DOMContentLoaded", function () {
-  const progressCircle = document.querySelector('.progress-circle');
-  const progressText = document.querySelector('.progress-text');
-  const loader = document.getElementById("loader");
-  const fixedLoder = document.querySelector('.fixed-loder');
+      const progressCircle = document.querySelector('.progress-circle');
+      const progressText = document.querySelector('.progress-text');
+      const loader = document.getElementById("loader");
+      const fixedLoder = document.querySelector('.fixed-loder');
 
-  function setProgress(value) {
-    progressCircle.style.setProperty('--progress', value);
-    progressText.textContent = `${value}%`;
-  }
-
-  function displayImages() {
-    loader.style.display = "none";
-    fixedLoder.style.display = "block";
-    progressText.style.display = "none"; // パーセント表示を隠す
-    setProgress(0); // 進捗をリセット
-
-    var inputText = document.getElementById("textInput").value.trim();
-
-    if (!inputText.match(/\.(jpg|jpeg|png|webp)$/i)) {
-      document.getElementById("errorContainer").innerText = "画像URLを入力してください。";
-      loader.style.display = "none";
-      fixedLoder.style.display = "none";
-      return;
-    } else {
-      document.getElementById("errorContainer").innerText = "";
-    }
-
-    var baseInputText = inputText.slice(0, inputText.lastIndexOf('.') - 1);
-    var extension = inputText.slice(inputText.lastIndexOf('.')).toLowerCase();
-    var extensions = ['.jpg', '.png', '.jpeg', '.webp'];
-    var imageContainer = document.getElementById("imageContainer");
-    var i = 1;
-    var j = 0;
-
-    imageContainer.innerHTML = "";
-
-    function checkAndDisplayImage() {
-      if (j >= extensions.length) {
-        loader.style.display = "none";
-        fixedLoder.style.display = "none";
-        return;
+      function setProgress(value) {
+        progressCircle.style.setProperty('--progress', value);
+        progressText.textContent = `${value}%`;
       }
 
-      var imageUrl = baseInputText + i + extension;
-      var img = new Image();
-      img.onload = function() {
-        var container = document.createElement("div");
-        container.className = "imageContainer";
-        var imgElement = document.createElement("img");
-        imgElement.src = imageUrl;
-        var numberElement = document.createElement("div");
-        numberElement.className = "imageNumber";
-        numberElement.innerHTML = i;
-
-        container.appendChild(imgElement);
-        container.appendChild(numberElement);
-        imageContainer.appendChild(container);
-        i++;
-        j = 0;
-        checkAndDisplayImage();
+      window.processDisplay = function () {
+        const isLinkMode = document.getElementById("linkToggle").checked;
+        loader.style.display = "none";
+        fixedLoder.style.display = "block";
+        progressText.style.display = "none";
+        setProgress(0);
+        document.getElementById("imageContainer").innerHTML = "";
+        document.getElementById("errorContainer").innerText = "";
+        if (isLinkMode) generateLinks(); else displayImages();
       };
-      img.onerror = function() {
-        j++;
-        extension = extensions[j] || extension;
-        checkAndDisplayImage();
-      };
-      img.src = imageUrl;
-    }
 
-    checkAndDisplayImage();
-  }
+      function generateLinks() {
+        const input = document.getElementById("textInput").value.trim();
+        if (!input.match(/\.(jpg|jpeg|png|webp)$/i)) {
+          document.getElementById("errorContainer").innerText = "画像URLを入力してください。";
+          loader.style.display = "none";
+          fixedLoder.style.display = "none";
+          return;
+        }
+        const baseInputText = input.slice(0, input.lastIndexOf('.') - 1);
+        const extensions = ['.jpg', '.png', '.jpeg', '.webp'];
+        let i = 1;
+        const container = document.getElementById("imageContainer");
 
-  async function downloadImages() {
-    loader.style.display = "block"; // ロード表示を開始
-    progressText.style.display = "block"; // パーセント表示を表示
-    fixedLoder.style.display = "none";
+        (function next() {
+          let tried = 0;
 
-    var imageContainer = document.getElementById("imageContainer");
-    var images = imageContainer.getElementsByTagName("img");
-    var zip = new JSZip();
-    var zipFileName = document.getElementById("zipFileNameInput").value.trim() || "images";
-    var totalImages = images.length;
+          function tryNextExtension() {
+            if (tried >= extensions.length) {
+              i++;
+              next();
+              return;
+            }
 
-    for (var i = 0; i < totalImages; i++) {
-      var imageUrl = images[i].src;
-      var response = await fetch(imageUrl, { mode: 'cors' });
-      var blob = await response.blob();
-      var imgName = (i + 1) + '.jpg';
-      zip.file(imgName, blob);
+            const ext = extensions[tried];
+            const url = baseInputText + i + ext;
+            const img = new Image();
 
-      var progressPercent = Math.round(((i + 1) / totalImages) * 100);
-      setProgress(progressPercent);
-    }
+            img.onload = function () {
+              const div = document.createElement("div");
+              div.className = "linkContainer";
+              const a = document.createElement("a");
+              a.href = url;
+              a.target = "_blank";
+              a.textContent = url;
+              div.appendChild(a);
+              container.appendChild(div);
 
-    zip.generateAsync({ type: "blob" }).then(function(content) {
-      saveAs(content, zipFileName + ".zip");
-      loader.style.display = "none"; // ロード表示を終了
-    }).catch(function(error) {
-      console.error("Error creating zip file: ", error);
-      loader.style.display = "none"; // ロード表示を終了
+              i++;
+              next();
+            };
+
+            img.onerror = function () {
+              tried++;
+              tryNextExtension();
+            };
+
+            img.src = url;
+          }
+
+          tryNextExtension();
+        })();
+      }
+
+
+      function displayImages() {
+        const input = document.getElementById("textInput").value.trim();
+        if (!input.match(/\.(jpg|jpeg|png|webp)$/i)) {
+          document.getElementById("errorContainer").innerText = "画像URLを入力してください。";
+          loader.style.display = "none";
+          fixedLoder.style.display = "none";
+          return;
+        }
+        const baseInputText = input.slice(0, input.lastIndexOf('.') - 1);
+        const extensions = ['.jpg', '.png', '.jpeg', '.webp'];
+        let i = 1;
+        const container = document.getElementById("imageContainer");
+
+        (function next() {
+          let tried = 0;
+
+          function tryNextExtension() {
+            if (tried >= extensions.length) {
+              i++;
+              next();
+              return;
+            }
+
+            const ext = extensions[tried];
+            const url = baseInputText + i + ext;
+            const img = new Image();
+
+            img.onload = function () {
+              const wrap = document.createElement("div");
+              wrap.className = "imageContainer";
+              const imgEl = document.createElement("img");
+              imgEl.src = url;
+              const num = document.createElement("div");
+              num.className = "imageNumber";
+              num.textContent = i;
+              wrap.appendChild(imgEl);
+              wrap.appendChild(num);
+              container.appendChild(wrap);
+
+              i++;
+              next();
+            };
+
+            img.onerror = function () {
+              tried++;
+              tryNextExtension();
+            };
+
+            img.src = url;
+          }
+
+          tryNextExtension();
+        })();
+      }
+
+
+      async function downloadImages() {
+        loader.style.display = "block";
+        progressText.style.display = "block";
+        fixedLoder.style.display = "none";
+
+        const images = document.getElementById("imageContainer").getElementsByTagName("img");
+        const zip = new JSZip();
+        const zipFileName = document.getElementById("zipFileNameInput").value.trim() || "images";
+
+        for (let k = 0; k < images.length; k++) {
+          const imageUrl = images[k].src;
+          const response = await fetch(imageUrl, { mode: 'cors' });
+          const blob = await response.blob();
+          zip.file((k + 1) + '.jpg', blob);
+          setProgress(Math.round(((k + 1) / images.length) * 100));
+        }
+
+        zip.generateAsync({ type: "blob" })
+          .then(function (content) { saveAs(content, zipFileName + ".zip"); loader.style.display = "none"; })
+          .catch(function (error) { console.error(error); loader.style.display = "none"; });
+      }
+
+      window.displayImages = displayImages;
+      window.downloadImages = downloadImages;
     });
-  }
-  window.displayImages = displayImages;
-  window.downloadImages = downloadImages;
-});
   </script>
 
 </body>
+
 </html>
