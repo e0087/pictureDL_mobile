@@ -277,6 +277,7 @@
       const progressText = document.querySelector('.progress-text');
       const loader = document.getElementById("loader");
       const fixedLoder = document.querySelector('.fixed-loder');
+      const extensions = ['.jpg', '.png', '.jpeg', '.webp']; // 対応拡張子
 
       function setProgress(value) {
         progressCircle.style.setProperty('--progress', value);
@@ -296,22 +297,30 @@
 
       function generateLinks() {
         const input = document.getElementById("textInput").value.trim();
-        if (!input.match(/\.(jpg|jpeg|png|webp)$/i)) {
+        const isValidExtension = extensions.some(ext => input.toLowerCase().endsWith(ext));
+        if (!isValidExtension) {
           document.getElementById("errorContainer").innerText = "画像URLを入力してください。";
           loader.style.display = "none";
           fixedLoder.style.display = "none";
           return;
         }
         const baseInputText = input.slice(0, input.lastIndexOf('.') - 1);
-        const extensions = ['.jpg', '.png', '.jpeg', '.webp'];
         let i = 1;
+        let failCount = 0;
+        const maxFails = extensions.length;
         const container = document.getElementById("imageContainer");
 
         (function next() {
+          if (failCount >= maxFails) {
+            fixedLoder.style.display = "none";
+            return;
+          }
+
           let tried = 0;
 
           function tryNextExtension() {
             if (tried >= extensions.length) {
+              failCount++;
               i++;
               next();
               return;
@@ -331,6 +340,7 @@
               div.appendChild(a);
               container.appendChild(div);
 
+              failCount = 0; // 成功時カウントリセット
               i++;
               next();
             };
@@ -347,25 +357,32 @@
         })();
       }
 
-
       function displayImages() {
         const input = document.getElementById("textInput").value.trim();
-        if (!input.match(/\.(jpg|jpeg|png|webp)$/i)) {
+        const isValidExtension = extensions.some(ext => input.toLowerCase().endsWith(ext));
+        if (!isValidExtension) {
           document.getElementById("errorContainer").innerText = "画像URLを入力してください。";
           loader.style.display = "none";
           fixedLoder.style.display = "none";
           return;
         }
         const baseInputText = input.slice(0, input.lastIndexOf('.') - 1);
-        const extensions = ['.jpg', '.png', '.jpeg', '.webp'];
         let i = 1;
+        let failCount = 0;
+        const maxFails = extensions.length;
         const container = document.getElementById("imageContainer");
 
         (function next() {
+          if (failCount >= maxFails) {
+            fixedLoder.style.display = "none";
+            return;
+          }
+
           let tried = 0;
 
           function tryNextExtension() {
             if (tried >= extensions.length) {
+              failCount++;
               i++;
               next();
               return;
@@ -387,6 +404,7 @@
               wrap.appendChild(num);
               container.appendChild(wrap);
 
+              failCount = 0; // 成功したのでカウントリセット
               i++;
               next();
             };
@@ -402,7 +420,6 @@
           tryNextExtension();
         })();
       }
-
 
       async function downloadImages() {
         loader.style.display = "block";
