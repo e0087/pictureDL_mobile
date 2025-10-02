@@ -409,6 +409,21 @@
         min-height: 40vh;
       }
     }
+
+    #panoramaWrapper {
+      display: none;
+      width: 100%;
+      height: 100%;
+      overflow-x: auto;
+      white-space: nowrap;
+      background: #000;
+    }
+    #panoramaWrapper img {
+      height: 95vh;
+      display: inline-block;
+      object-fit: contain;
+    }
+
   </style>
 </head>
 
@@ -479,6 +494,10 @@
       <label class="switch"><input type="checkbox" id="spreadSwitch"><span class="slider"></span></label>
     </div>
     <div class="menuRow">
+  <div>パノラマモード</div>
+    <label class="switch"><input type="checkbox" id="panoramaSwitch"><span class="slider"></span></label>
+  </div>
+    <div class="menuRow">
       <div>開き方向</div>
       <div>
         <label class="chip"><input type="radio" name="openDir" value="right" id="dirRight" checked> 右開き</label>
@@ -523,6 +542,38 @@
       const menuDownloadBtn = document.getElementById('menuDownloadBtn');
       const firstBtn = document.getElementById('firstBtn');
       const shiftSwitch = document.getElementById('shiftSwitch');
+      const panoramaSwitch = document.getElementById('panoramaSwitch');
+      const panoramaWrapper = document.createElement('div');
+      panoramaWrapper.id = 'panoramaWrapper';
+      document.getElementById('viewerInner').appendChild(panoramaWrapper);
+      let panoramaScrollTimeout = null;
+      panoramaWrapper.addEventListener('scroll', function () {
+        // パノラマ以外では無視
+        if (!panoramaSwitch.checked) return;
+        if (panoramaScrollTimeout) clearTimeout(panoramaScrollTimeout);
+        panoramaScrollTimeout = setTimeout(function () {
+          const imgs = Array.from(panoramaWrapper.querySelectorAll('img'));
+          if (!imgs.length) return;
+          const wrapperRect = panoramaWrapper.getBoundingClientRect();
+          const wrapperCenterX = wrapperRect.left + wrapperRect.width / 2;
+          let closestIndex = 0;
+          let closestDist = Infinity;
+          imgs.forEach(img => {
+            const rect = img.getBoundingClientRect();
+            const imgCenter = rect.left + rect.width / 2;
+            const dist = Math.abs(imgCenter - wrapperCenterX);
+            const index = parseInt(img.dataset.index, 10);
+            if (dist < closestDist) {
+              closestDist = dist;
+              closestIndex = index;
+            }
+          });
+          if (idx !== closestIndex) {
+            idx = closestIndex;
+            updatePageIndicator();
+          }
+        }, 80); // 80ms のデバウンス（必要に応じて調整）
+      }, { passive: true });
 
       let images = []; // list of image URLs
       let idx = 0;
@@ -715,10 +766,12 @@
         if (!indicator) return;
 
         const spreadOn = spreadSwitch.checked;
+        const panoOn = panoramaSwitch.checked;
         let text = '';
-        if (!spreadOn) {
+
+        if (panoOn) {
           text = (idx + 1).toString();
-        } else {
+        } else if (spreadOn) {
           let pairStart;
           if (shiftSwitch && shiftSwitch.checked) {
             pairStart = Math.floor((idx - 1) / 2) * 2 + 1;
@@ -735,6 +788,8 @@
           } else {
             text = `${p1} - ${p2}`;
           }
+        } else {
+          text = (idx + 1).toString();          
         }
         document.getElementById('pageIndicator').textContent = text;
       }
@@ -744,16 +799,31 @@
       function closeViewer() { viewerOverlay.style.display = 'none'; viewerOverlay.setAttribute('aria-hidden', 'true'); try { viewerToggle.checked = false; } catch (e) { }; closeMenu(); }
       function renderViewer() {
         const spreadOn = spreadSwitch.checked;
-        if (!spreadOn) {
+        const panoOn = panoramaSwitch.checked;
+      
+        if (panoOn) {
+          singleImage.style.display = 'none';
           spreadWrapper.style.display = 'none';
-          singleImage.style.display = 'block';
-          singleImage.src = images[idx] || '';
-        } else {
+          panoramaWrapper.style.display = 'flex';
+          panoramaWrapper.innerHTML = '';
+      
+          // 開き方向で並び替え
+          panoramaWrapper.style.flexDirection = dirRight.checked ? 'row-reverse' : 'row';
+      
+          images.forEach((src, i) => {
+          const img = document.createElement('img');
+          img.src = src;
+          img.dataset.index = i;
+          panoramaWrapper.appendChild(img);
+        });
+
+        } else if (spreadOn) {
+          panoramaWrapper.style.display = 'none';
           singleImage.style.display = 'none';
           spreadWrapper.style.display = 'flex';
-
+      
           const dir = dirRight.checked ? 'right' : 'left';
-
+      
           let pairStart;
           if (shiftSwitch && shiftSwitch.checked) {
             pairStart = Math.floor((idx - 1) / 2) * 2 + 1;
@@ -761,31 +831,105 @@
           } else {
             pairStart = Math.floor(idx / 2) * 2;
           }
+      
           let leftIndex, rightIndex;
           if (dir === 'left') {
             leftIndex = pairStart;
             rightIndex = pairStart + 1;
           } else {
-            // right-opening: show right page on the right slot, left page on the left slot
             leftIndex = pairStart + 1;
             rightIndex = pairStart;
           }
-          const leftSrc = images[leftIndex] || '';
-          const rightSrc = images[rightIndex] || '';
+      
           spreadLeftImg.src = images[leftIndex] || '';
           spreadRightImg.src = images[rightIndex] || '';
+      
+        } else {
+          panoramaWrapper.style.display = 'none';
+          spreadWrapper.style.display = 'none';
+          singleImage.style.display = 'block';
+          singleImage.src = images[idx] || '';
         }
+      
         // ページインジケーター更新
         updatePageIndicator();
       }
 
-      function next() { const spreadOn = spreadSwitch.checked; if (!spreadOn) { if (idx < images.length - 1) { idx++; renderViewer(); } } else { const step = 2; if (idx + step < images.length) { idx += step; } else { idx = Math.max(0, images.length - 1); } renderViewer(); } }
-      function prev() { const spreadOn = spreadSwitch.checked; if (!spreadOn) { if (idx > 0) { idx--; renderViewer(); } } else { const step = 2; if (idx - step >= 0) { idx -= step; } else { idx = 0; } renderViewer(); } }
+
+      function next() {
+        const spreadOn = spreadSwitch.checked;
+        const panoOn = panoramaSwitch.checked;
+
+        if (panoOn) {
+          if (idx < images.length - 1) {
+            idx++;
+            const target = panoramaWrapper.querySelector(`img[data-index="${idx}"]`);
+            if (target) target.scrollIntoView({ behavior: "smooth", inline: "start" });
+          }
+          updatePageIndicator();
+        } else if (spreadOn) {
+          const step = 2;
+          if (idx + step < images.length) {
+            idx += step; 
+          } else {
+            idx = Math.max(0, images.length - 1);
+          }
+          renderViewer(); 
+        } else {
+          if (idx < images.length - 1) {
+            idx++;
+            renderViewer();
+          }
+        }          
+      }
+      
+      function prev() {
+        const spreadOn = spreadSwitch.checked;
+        const panoOn = panoramaSwitch.checked;
+
+        if (panoOn) {
+          if (idx > 0) {
+            idx--;
+            const target = panoramaWrapper.querySelector(`img[data-index="${idx}"]`);
+            if (target) target.scrollIntoView({ behavior: "smooth", inline: "start" });
+          }
+          updatePageIndicator();
+        } else if (spreadOn) {
+          const step = 2;
+          if (idx - step >= 0) {
+              idx -= step;
+            } else {
+              idx = 0;
+            }
+          renderViewer();
+        } else {
+          if (idx > 0) {
+            idx--;
+            renderViewer();
+          }
+        }
+      }
 
       document.getElementById('nextBtn').addEventListener('click', function (e) { e.stopPropagation(); next(); });
       document.getElementById('prevBtn').addEventListener('click', function (e) { e.stopPropagation(); prev(); });
       document.getElementById('closeBtn').addEventListener('click', function (e) { e.stopPropagation(); closeViewer(); });
-      document.getElementById('firstBtn').addEventListener('click', function (e) { e.stopPropagation(); idx = 0; renderViewer(); });
+      document.getElementById('firstBtn').addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (panoramaSwitch.checked) {
+          // パノラマならスクロールで先頭に飛ばしてインジケータを更新
+          idx = 0;
+          const target = panoramaWrapper.querySelector('img[data-index="0"]');
+          if (target) {
+            // smooth でスナップさせる（必要なら inline: "start" に変更可）
+            target.scrollIntoView({ behavior: "smooth", inline: "start" });
+          }
+          updatePageIndicator();
+        } else {
+          // 単ページ／見開きは既存のレンダーで対応
+          idx = 0;
+          renderViewer();
+        }
+      });
 
       // background click to close (but not when clicking inner content)
       viewerOverlay.addEventListener('click', function (e) { if (e.target === viewerOverlay) { closeViewer(); } });
@@ -801,7 +945,36 @@
       // touch swipe
       let touchStartX = null;
       viewerOverlay.addEventListener('touchstart', function (e) {
+        // タッチ開始の X を記録（パノラマ時も記録しておく）
         touchStartX = e.changedTouches[0].clientX;
+      }, { passive: true });
+      
+      viewerOverlay.addEventListener('touchend', function (e) {
+        if (touchStartX == null) return;
+        const dx = e.changedTouches[0].clientX - touchStartX;
+      
+        // ★ パノラマモードなら「スワイプでの prev/next を行わない」
+        //    （パノラマは自由スクロールが優先）
+        if (panoramaSwitch.checked) {
+          touchStartX = null;
+          // ※ スクロールで idx は scroll イベントで更新されるのでここでは何もしない
+          return;
+        }
+      
+        // パノラマでなければ（通常の単ページ／見開き）スワイプでページ操作
+        if (Math.abs(dx) > 40) {
+          if (dirRight.checked) {
+            // 右開き: スワイプ左で prev、右で next （既存の仕様を維持）
+            if (dx < 0) prev();
+            else next();
+          } else {
+            // 左開き
+            if (dx < 0) next();
+            else prev();
+          }
+        }
+      
+        touchStartX = null;
       }, { passive: true });
 
       viewerOverlay.addEventListener('touchend', function (e) {
@@ -856,6 +1029,13 @@
       // re-render when spread/direction change
       spreadSwitch.addEventListener('change', function () { // when enabling spread, align idx to pair start
         if (spreadSwitch.checked) { idx = Math.floor(idx / 2) * 2; }
+        panoramaSwitch.checked = false;
+        renderViewer();
+      });
+      panoramaSwitch.addEventListener('change', function () {
+        if (panoramaSwitch.checked) {
+          spreadSwitch.checked = false;
+        }
         renderViewer();
       });
       dirRight.addEventListener('change', function () { renderViewer(); });
