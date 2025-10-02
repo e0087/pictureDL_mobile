@@ -123,7 +123,6 @@
       cursor: pointer;
     }
 
-    /* toggle switch */
     .switch {
       position: relative;
       display: inline-block;
@@ -142,10 +141,7 @@
     .slider {
       position: absolute;
       cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      inset: 0;
       background-color: #ccc;
       border-radius: 13px;
       transition: .4s;
@@ -171,25 +167,28 @@
       transform: translateX(24px);
     }
 
-    /* loader */
     #loader {
       display: none;
-      width: 100px;
-      height: 100px;
-      position: relative;
-      margin: 20px auto;
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      width: 35px;
+      height: 35px;
+      z-index: 10001;
     }
 
     .progress-circle {
-      position: relative;
-      width: 100px;
-      height: 100px;
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      width: 55px;
+      height: 55px;
       border-radius: 50%;
       background: conic-gradient(#3498db 0% calc(var(--progress) * 1%), #ddd calc(var(--progress) * 1%) 100%);
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 20px;
+      font-size: 10px;
       font-weight: bold;
       color: #3498db;
     }
@@ -197,14 +196,16 @@
     .progress-circle::before {
       content: "";
       position: absolute;
-      width: 80px;
-      height: 80px;
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
       background: #fff;
     }
 
     .progress-text {
       position: relative;
+      z-index: 2;
+      font-size: 10px;
     }
 
     .fixed-loder {
@@ -215,8 +216,8 @@
       border-top: 8px solid #3498db;
       width: 35px;
       height: 35px;
-      bottom: 0;
-      right: 0;
+      bottom: 10px;
+      right: 10px;
       animation: spin-right 2s linear infinite;
     }
 
@@ -227,6 +228,185 @@
 
       100% {
         transform: rotate(360deg);
+      }
+    }
+
+    /* Viewer overlay */
+    #viewerOverlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.92);
+      z-index: 9999;
+      touch-action: pan-y;
+    }
+
+    #viewerInner {
+      width: 100%;
+      max-width: 1100px;
+      height: 100%;
+      max-height: 95vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+
+    #singleImage {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      background: #000;
+    }
+
+    #spreadWrapper {
+      display: flex;
+      gap: 0px;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+
+    .spreadSlot {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      overflow: hidden;
+    }
+
+    .spreadSlot img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .viewerControls {
+      position: fixed;
+      width: 100%;
+      left: 0;
+      bottom: 10px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      z-index: 10000;
+    }
+
+    .viewerBtn {
+      padding: 10px 16px;
+      border: 1px solid #ccc;
+      background: rgba(255, 255, 255, 0.06);
+      color: #fff;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .viewerBtn:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .fixedBtn {
+      position: fixed;
+      top: 12px;
+      padding: 10px 16px;
+      border: 1px solid #ccc;
+      background: rgba(255, 255, 255, 0.06);
+      color: #fff;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      z-index: 10001;
+    }
+
+    .closeBtn {
+      right: 12px;
+    }
+
+    .menuBtn {
+      left: 12px;
+    }
+
+    .fixedBtn:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .fixedPageIndicator {
+      position: fixed;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #fff;
+      font-size: 16px;
+      font-weight: bold;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 6px 12px;
+      border-radius: 6px;
+      z-index: 10001;
+    }
+
+    /* Menu panel */
+    #menuPanel {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      min-width: 260px;
+      backdrop-filter: blur(10px) brightness(80%);
+      color: #fff;
+      padding: 16px;
+      border-radius: 10px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+      display: none;
+      z-index: 11000;
+    }
+
+    #menuPanel h3 {
+      margin: 0 0 10px 0;
+      font-size: 16px;
+    }
+
+    .menuRow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 8px 0;
+      gap: 8px;
+    }
+
+    .menuFooter {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .chip {
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 13px;
+    }
+
+    @media (max-width:600px) {
+      .viewerControls {
+        flex-direction: row;
+        bottom: 12px;
+      }
+
+      #menuPanel {
+        min-width: 300px;
+      }
+
+      .spreadSlot {
+        min-height: 40vh;
       }
     }
   </style>
@@ -247,8 +427,10 @@
       </ol>
       <div style="margin-top:10px;"><strong>▼モード切替</strong></div>
       <label class="switch"><input type="checkbox" id="linkToggle"><span class="slider"></span></label> リンク表示モード
-  </div>
-  </details>
+      <br />
+      <label class="switch"><input type="checkbox" id="viewerToggle"><span class="slider"></span></label>
+      コミックビュアーモード
+    </details>
   </div>
 
   <div class="input-group">
@@ -259,66 +441,133 @@
     <input type="search" id="zipFileNameInput" placeholder="zipファイル名(オプション)">
     <button onclick="downloadImages()">一括保存</button>
   </div>
+
   <div id="errorContainer"></div>
   <div id="loader">
-    <div class="progress-circle" data-progress="0">
-      <span class="progress-text">0%</span>
-    </div>
+    <div class="progress-circle" data-progress="0"><span class="progress-text">0%</span></div>
   </div>
   <div class="fixed-loder" style="z-index:10000"></div>
   <div id="imageContainer"></div>
 
+  <!-- Viewer overlay -->
+  <div id="viewerOverlay" aria-hidden="true">
+    <div id="viewerInner">
+      <!-- Single image container -->
+      <img id="singleImage" alt="viewer" style="display:none">
+      <!-- Spread container: left/right slots -->
+      <div id="spreadWrapper" style="display:none">
+        <div class="spreadSlot" id="spreadLeft"><img id="spreadLeftImg" alt=""></div>
+        <div class="spreadSlot" id="spreadRight"><img id="spreadRightImg" alt=""></div>
+      </div>
+    </div>
+
+    <div class="viewerControls">
+      <button id="menuBtn" class="fixedBtn menuBtn">≡</button>
+      <div id="pageIndicator" class="fixedBtn PageIndicator">1</div>
+      <button id="closeBtn" class="fixedBtn closeBtn">✕</button>
+      <button class="viewerBtn" id="prevBtn" type="button">◀</button>
+      <button class="viewerBtn" id="firstBtn" type="button">1ページ目</button>
+      <button class="viewerBtn" id="nextBtn" type="button">▶</button>
+    </div>
+  </div>
+
+  <!-- Menu panel (modal) -->
+  <div id="menuPanel" role="dialog" aria-modal="true" aria-hidden="true">
+    <h3>Viewerメニュー</h3>
+    <div class="menuRow">
+      <div>見開きモード</div>
+      <label class="switch"><input type="checkbox" id="spreadSwitch"><span class="slider"></span></label>
+    </div>
+    <div class="menuRow">
+      <div>開き方向</div>
+      <div>
+        <label class="chip"><input type="radio" name="openDir" value="right" id="dirRight" checked> 右開き</label>
+        <label class="chip" style="margin-left:6px"><input type="radio" name="openDir" value="left" id="dirLeft">
+          左開き</label>
+      </div>
+    </div>
+    <div class="menuRow">
+      <div>ページずらし</div>
+      <label class="switch"><input type="checkbox" id="shiftSwitch"><span class="slider"></span></label>
+    </div>
+    <div class="menuRow" id="menuExtra"></div>
+    <div class="menuFooter">
+      <button class="viewerBtn" id="menuDownloadBtn" type="button">ダウンロード</button>
+      <button class="viewerBtn" id="menuCloseBtn">閉じる</button>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/jszip/dist/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/file-saver/dist/FileSaver.min.js"></script>
-
   <script>
-    document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener('DOMContentLoaded', function () {
+      const extensions = ['.jpg', '.png', '.jpeg', '.webp'];
       const progressCircle = document.querySelector('.progress-circle');
       const progressText = document.querySelector('.progress-text');
-      const loader = document.getElementById("loader");
+      const loader = document.getElementById('loader');
       const fixedLoder = document.querySelector('.fixed-loder');
-      const extensions = ['.jpg', '.png', '.jpeg', '.webp']; // 対応拡張子
 
-      function setProgress(value) {
-        progressCircle.style.setProperty('--progress', value);
-        progressText.textContent = `${value}%`;
+      // viewer elements
+      const viewerToggle = document.getElementById('viewerToggle');
+      const viewerOverlay = document.getElementById('viewerOverlay');
+      const singleImage = document.getElementById('singleImage');
+      const spreadWrapper = document.getElementById('spreadWrapper');
+      const spreadLeftImg = document.getElementById('spreadLeftImg');
+      const spreadRightImg = document.getElementById('spreadRightImg');
+      const spreadSwitch = document.getElementById('spreadSwitch');
+      const dirRight = document.getElementById('dirRight');
+      const dirLeft = document.getElementById('dirLeft');
+      const menuBtn = document.getElementById('menuBtn');
+      const menuPanel = document.getElementById('menuPanel');
+      const menuCloseBtn = document.getElementById('menuCloseBtn');
+      const menuDownloadBtn = document.getElementById('menuDownloadBtn');
+      const firstBtn = document.getElementById('firstBtn');
+      const shiftSwitch = document.getElementById('shiftSwitch');
+
+      let images = []; // list of image URLs
+      let idx = 0;
+
+      function setProgress(v) {
+        progressCircle.style.setProperty('--progress', v);
+        progressText.textContent = v + '%';
       }
 
       window.processDisplay = function () {
-        const isLinkMode = document.getElementById("linkToggle").checked;
-        loader.style.display = "none";
-        fixedLoder.style.display = "block";
-        progressText.style.display = "none";
+        const isLinkMode = document.getElementById('linkToggle').checked;
+        loader.style.display = 'none';
+        fixedLoder.style.display = 'block';
+        progressText.style.display = 'none';
         setProgress(0);
-        document.getElementById("imageContainer").innerHTML = "";
-        document.getElementById("errorContainer").innerText = "";
+        document.getElementById('imageContainer').innerHTML = '';
+        document.getElementById('errorContainer').innerText = '';
         if (isLinkMode) generateLinks(); else displayImages();
       };
 
       function generateLinks() {
-        const input = document.getElementById("textInput").value.trim();
-        const isValidExtension = extensions.some(ext => input.toLowerCase().endsWith(ext));
-        if (!isValidExtension) {
-          document.getElementById("errorContainer").innerText = "画像URLを入力してください。";
-          loader.style.display = "none";
-          fixedLoder.style.display = "none";
+        const input = document.getElementById('textInput').value.trim();
+        const isValid = extensions.some(ext => input.toLowerCase().endsWith(ext));
+        if (!isValid) {
+          document.getElementById('errorContainer').innerText = '画像URLを入力してください。';
+          loader.style.display = 'none';
+          fixedLoder.style.display = 'none';
           return;
         }
-        const baseInputText = input.slice(0, input.lastIndexOf('.') - 1);
-        let i = 1;
-        let failCount = 0;
+        const base = input.slice(0, input.lastIndexOf('.') - 1);
+        let i = 1,
+          failCount = 0;
         const maxFails = extensions.length;
-        const container = document.getElementById("imageContainer");
+        const container = document.getElementById('imageContainer');
 
         (function next() {
           if (failCount >= maxFails) {
-            fixedLoder.style.display = "none";
+            fixedLoder.style.display = 'none';
+            updateImagesFromContainer();
             return;
           }
 
           let tried = 0;
 
-          function tryNextExtension() {
+          function tryNextExt() {
             if (tried >= extensions.length) {
               failCount++;
               i++;
@@ -327,60 +576,61 @@
             }
 
             const ext = extensions[tried];
-            const url = baseInputText + i + ext;
+            const url = base + i + ext;
             const img = new Image();
 
             img.onload = function () {
-              const div = document.createElement("div");
-              div.className = "linkContainer";
-              const a = document.createElement("a");
+              const div = document.createElement('div');
+              div.className = 'linkContainer';
+              const a = document.createElement('a');
               a.href = url;
-              a.target = "_blank";
+              a.target = '_blank';
               a.textContent = url;
               div.appendChild(a);
               container.appendChild(div);
 
-              failCount = 0; // 成功時カウントリセット
+              failCount = 0;
               i++;
               next();
             };
 
             img.onerror = function () {
               tried++;
-              tryNextExtension();
+              tryNextExt();
             };
 
             img.src = url;
           }
 
-          tryNextExtension();
+          tryNextExt();
         })();
       }
 
       function displayImages() {
-        const input = document.getElementById("textInput").value.trim();
-        const isValidExtension = extensions.some(ext => input.toLowerCase().endsWith(ext));
-        if (!isValidExtension) {
-          document.getElementById("errorContainer").innerText = "画像URLを入力してください。";
-          loader.style.display = "none";
-          fixedLoder.style.display = "none";
+        const input = document.getElementById('textInput').value.trim();
+        const isValid = extensions.some(ext => input.toLowerCase().endsWith(ext));
+        if (!isValid) {
+          document.getElementById('errorContainer').innerText = '画像URLを入力してください。';
+          loader.style.display = 'none';
+          fixedLoder.style.display = 'none';
           return;
         }
-        const baseInputText = input.slice(0, input.lastIndexOf('.') - 1);
-        let i = 1;
-        let failCount = 0;
+        const base = input.slice(0, input.lastIndexOf('.') - 1);
+        let i = 1, failCount = 0;
+
         const maxFails = extensions.length;
-        const container = document.getElementById("imageContainer");
+        const container = document.getElementById('imageContainer');
 
         (function next() {
           if (failCount >= maxFails) {
-            fixedLoder.style.display = "none";
+            fixedLoder.style.display = 'none';
+            updateImagesFromContainer();
             return;
           }
 
           let tried = 0;
 
-          function tryNextExtension() {
+          function tryNextExt() {
             if (tried >= extensions.length) {
               failCount++;
               i++;
@@ -389,62 +639,232 @@
             }
 
             const ext = extensions[tried];
-            const url = baseInputText + i + ext;
+            const url = base + i + ext;
             const img = new Image();
 
             img.onload = function () {
-              const wrap = document.createElement("div");
-              wrap.className = "imageContainer";
-              const imgEl = document.createElement("img");
+              const wrap = document.createElement('div');
+              wrap.className = 'imageContainer';
+              const imgEl = document.createElement('img');
               imgEl.src = url;
-              const num = document.createElement("div");
-              num.className = "imageNumber";
+              imgEl.alt = 'image ' + i;
+              imgEl.loading = 'lazy';
+              const num = document.createElement('div');
+              num.className = 'imageNumber';
               num.textContent = i;
               wrap.appendChild(imgEl);
               wrap.appendChild(num);
               container.appendChild(wrap);
 
-              failCount = 0; // 成功したのでカウントリセット
+              failCount = 0;
               i++;
               next();
             };
 
             img.onerror = function () {
               tried++;
-              tryNextExtension();
+              tryNextExt();
             };
 
             img.src = url;
           }
 
-          tryNextExtension();
+          tryNextExt();
         })();
       }
 
+      function updateImagesFromContainer() {
+        const imgs = Array.from(document.querySelectorAll('#imageContainer img'));
+        images = imgs.map(el => el.src);
+        idx = 0;
+        if (viewerToggle.checked && images.length) openViewer();
+      }
+
       async function downloadImages() {
-        loader.style.display = "block";
-        progressText.style.display = "block";
-        fixedLoder.style.display = "none";
+        loader.style.display = 'block';
+        fixedLoder.style.display = 'none';
+        progressText.style.display = 'block';
 
-        const images = document.getElementById("imageContainer").getElementsByTagName("img");
+        const imgs = document.getElementById('imageContainer').getElementsByTagName('img');
         const zip = new JSZip();
-        const zipFileName = document.getElementById("zipFileNameInput").value.trim() || "images";
+        const name = document.getElementById('zipFileNameInput').value.trim() || 'images';
 
-        for (let k = 0; k < images.length; k++) {
-          const imageUrl = images[k].src;
-          const response = await fetch(imageUrl, { mode: 'cors' });
-          const blob = await response.blob();
+        for (let k = 0; k < imgs.length; k++) {
+          const url = imgs[k].src;
+          const res = await fetch(url, { mode: 'cors' });
+          const blob = await res.blob();
           zip.file((k + 1) + '.jpg', blob);
-          setProgress(Math.round(((k + 1) / images.length) * 100));
+          setProgress(Math.round(((k + 1) / imgs.length) * 100));
         }
 
-        zip.generateAsync({ type: "blob" })
-          .then(function (content) { saveAs(content, zipFileName + ".zip"); loader.style.display = "none"; })
-          .catch(function (error) { console.error(error); loader.style.display = "none"; });
+        zip.generateAsync({ type: 'blob' })
+          .then(function (content) {
+            saveAs(content, name + '.zip'); loader.style.display = 'none';
+
+            document.getElementById('textInput').value = '';
+            document.getElementById('zipFileNameInput').value = '';
+          })
+          .catch(function (e) { console.error(e); loader.style.display = 'none'; });
       }
 
       window.displayImages = displayImages;
       window.downloadImages = downloadImages;
+
+      function updatePageIndicator() {
+        const indicator = document.getElementById('pageIndicator');
+        if (!indicator) return;
+
+        const spreadOn = spreadSwitch.checked;
+        let text = '';
+        if (!spreadOn) {
+          text = (idx + 1).toString();
+        } else {
+          let pairStart;
+          if (shiftSwitch && shiftSwitch.checked) {
+            pairStart = Math.floor((idx - 1) / 2) * 2 + 1;
+            if (pairStart < 0) pairStart = 0;
+          } else {
+            pairStart = Math.floor(idx / 2) * 2;
+          }
+          const p1 = pairStart + 1;
+          const p2 = pairStart + 2;
+          if (p1 > images.length) {
+            text = "";
+          } else if (p2 > images.length) {
+            text = p1.toString();
+          } else {
+            text = `${p1} - ${p2}`;
+          }
+        }
+        document.getElementById('pageIndicator').textContent = text;
+      }
+
+      // Viewer behaviours
+      function openViewer() { if (!images.length) return; viewerOverlay.style.display = 'flex'; viewerOverlay.setAttribute('aria-hidden', 'false'); renderViewer(); }
+      function closeViewer() { viewerOverlay.style.display = 'none'; viewerOverlay.setAttribute('aria-hidden', 'true'); try { viewerToggle.checked = false; } catch (e) { }; closeMenu(); }
+      function renderViewer() {
+        const spreadOn = spreadSwitch.checked;
+        if (!spreadOn) {
+          spreadWrapper.style.display = 'none';
+          singleImage.style.display = 'block';
+          singleImage.src = images[idx] || '';
+        } else {
+          singleImage.style.display = 'none';
+          spreadWrapper.style.display = 'flex';
+
+          const dir = dirRight.checked ? 'right' : 'left';
+
+          let pairStart;
+          if (shiftSwitch && shiftSwitch.checked) {
+            pairStart = Math.floor((idx - 1) / 2) * 2 + 1;
+            if (pairStart < 0) pairStart = 0;
+          } else {
+            pairStart = Math.floor(idx / 2) * 2;
+          }
+          let leftIndex, rightIndex;
+          if (dir === 'left') {
+            leftIndex = pairStart;
+            rightIndex = pairStart + 1;
+          } else {
+            // right-opening: show right page on the right slot, left page on the left slot
+            leftIndex = pairStart + 1;
+            rightIndex = pairStart;
+          }
+          const leftSrc = images[leftIndex] || '';
+          const rightSrc = images[rightIndex] || '';
+          spreadLeftImg.src = images[leftIndex] || '';
+          spreadRightImg.src = images[rightIndex] || '';
+        }
+        // ページインジケーター更新
+        updatePageIndicator();
+      }
+
+      function next() { const spreadOn = spreadSwitch.checked; if (!spreadOn) { if (idx < images.length - 1) { idx++; renderViewer(); } } else { const step = 2; if (idx + step < images.length) { idx += step; } else { idx = Math.max(0, images.length - 1); } renderViewer(); } }
+      function prev() { const spreadOn = spreadSwitch.checked; if (!spreadOn) { if (idx > 0) { idx--; renderViewer(); } } else { const step = 2; if (idx - step >= 0) { idx -= step; } else { idx = 0; } renderViewer(); } }
+
+      document.getElementById('nextBtn').addEventListener('click', function (e) { e.stopPropagation(); next(); });
+      document.getElementById('prevBtn').addEventListener('click', function (e) { e.stopPropagation(); prev(); });
+      document.getElementById('closeBtn').addEventListener('click', function (e) { e.stopPropagation(); closeViewer(); });
+      document.getElementById('firstBtn').addEventListener('click', function (e) { e.stopPropagation(); idx = 0; renderViewer(); });
+
+      // background click to close (but not when clicking inner content)
+      viewerOverlay.addEventListener('click', function (e) { if (e.target === viewerOverlay) { closeViewer(); } });
+
+      // keyboard
+      document.addEventListener('keydown', function (e) {
+        if (viewerOverlay.getAttribute('aria-hidden') === 'true') return;
+        if (e.key === 'ArrowRight') next();
+        else if (e.key === 'ArrowLeft') prev();
+        else if (e.key === 'Escape') closeViewer();
+      });
+
+      // touch swipe
+      let touchStartX = null;
+      viewerOverlay.addEventListener('touchstart', function (e) {
+        touchStartX = e.changedTouches[0].clientX;
+      }, { passive: true });
+
+      viewerOverlay.addEventListener('touchend', function (e) {
+        if (touchStartX == null) return;
+        const dx = e.changedTouches[0].clientX - touchStartX;
+
+        if (Math.abs(dx) > 40) {
+          if (dirRight.checked) {
+            // 右開き
+            if (dx < 0) prev();
+            else next();
+          } else {
+            // 左開き
+            if (dx < 0) next();
+            else prev();
+          }
+        }
+
+        touchStartX = null;
+      }, { passive: true });
+
+      // viewer toggle
+      viewerToggle.addEventListener('change', function () {
+        if (viewerToggle.checked) { if (images.length) openViewer(); else { } }
+        else { closeViewer(); }
+      });
+
+      // observe changes to imageContainer
+      const observer = new MutationObserver(function () { updateImagesFromContainer(); });
+      observer.observe(document.getElementById('imageContainer'), { childList: true, subtree: true });
+
+      // Menu panel
+      menuBtn.addEventListener('click', function (e) { e.stopPropagation(); openMenu(); });
+      function openMenu() { menuPanel.style.display = 'block'; menuPanel.setAttribute('aria-hidden', 'false'); }
+      function closeMenu() { menuPanel.style.display = 'none'; menuPanel.setAttribute('aria-hidden', 'true'); }
+      menuCloseBtn.addEventListener('click', function (e) { e.stopPropagation(); closeMenu(); });
+
+      // menu download action -> same as one-click download (close menu first)
+      menuDownloadBtn.addEventListener('click', function (e) { e.stopPropagation(); closeMenu(); setTimeout(function () { downloadImages(); }, 50); });
+
+      // clicking outside menu closes it
+      document.addEventListener('click', function (e) {
+        if (menuPanel.style.display === 'block') {
+          const rect = menuPanel.getBoundingClientRect();
+          if (!(e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom)) {
+            closeMenu();
+          }
+        }
+      });
+      menuPanel.addEventListener('click', function (e) { e.stopPropagation(); });
+
+      // re-render when spread/direction change
+      spreadSwitch.addEventListener('change', function () { // when enabling spread, align idx to pair start
+        if (spreadSwitch.checked) { idx = Math.floor(idx / 2) * 2; }
+        renderViewer();
+      });
+      dirRight.addEventListener('change', function () { renderViewer(); });
+      dirLeft.addEventListener('change', function () { renderViewer(); });
+
+      // utility
+      function updateImagesFromContainer() { const imgs = Array.from(document.querySelectorAll('#imageContainer img')); images = imgs.map(i => i.src); if (idx >= images.length) idx = Math.max(0, images.length - 1); if (viewerToggle.checked && images.length) openViewer(); }
+      window.updateImagesFromContainer = updateImagesFromContainer;
+
     });
   </script>
 
