@@ -546,10 +546,11 @@
       const panoramaWrapper = document.createElement('div');
       panoramaWrapper.id = 'panoramaWrapper';
       document.getElementById('viewerInner').appendChild(panoramaWrapper);
+      let isProgrammaticScroll = false;
       let panoramaScrollTimeout = null;
       panoramaWrapper.addEventListener('scroll', function () {
-        // パノラマ以外では無視
         if (!panoramaSwitch.checked) return;
+        if (isProgrammaticScroll) return; // ← 追加（プログラムスクロール中は無視）
         if (panoramaScrollTimeout) clearTimeout(panoramaScrollTimeout);
         panoramaScrollTimeout = setTimeout(function () {
           const imgs = Array.from(panoramaWrapper.querySelectorAll('img'));
@@ -572,7 +573,7 @@
             idx = closestIndex;
             updatePageIndicator();
           }
-        }, 80); // 80ms のデバウンス（必要に応じて調整）
+        }, 80);
       }, { passive: true });
 
       let images = []; // list of image URLs
@@ -724,10 +725,37 @@
         })();
       }
 
+      function ensurePanoramaDOM() {
+        // 既に同じ数の img があれば src を単に更新して終わり（使い回し）
+        const existing = Array.from(panoramaWrapper.querySelectorAll('img'));
+        if (existing.length === images.length) {
+          existing.forEach((el, i) => {
+            if (el.src !== images[i]) el.src = images[i] || '';
+          });
+          return;
+        }
+      
+        // 数が変わっている／初回：一度だけ再構築
+        panoramaWrapper.innerHTML = '';
+        images.forEach((src, i) => {
+          const img = document.createElement('img');
+          img.dataset.index = i;
+          img.src = src || '';
+          img.alt = 'p' + (i + 1);
+          panoramaWrapper.appendChild(img);
+        });
+      }
+
       function updateImagesFromContainer() {
         const imgs = Array.from(document.querySelectorAll('#imageContainer img'));
         images = imgs.map(el => el.src);
-        idx = 0;
+      
+        // idx は初期状態のみ 0 のまま、それ以外は現在の idx を保持してクランプする
+        if (idx >= images.length) idx = Math.max(0, images.length - 1);
+      
+        // パノラマDOMを更新（初回作成／差分のみ）
+        ensurePanoramaDOM();
+      
         if (viewerToggle.checked && images.length) openViewer();
       }
 
@@ -804,18 +832,47 @@
         if (panoOn) {
           singleImage.style.display = 'none';
           spreadWrapper.style.display = 'none';
+        
+          // まずパノラマDOMを確実に作る（初回のみ）
+          ensurePanoramaDOM();
+        
+          // 表示切替
           panoramaWrapper.style.display = 'flex';
-          panoramaWrapper.innerHTML = '';
-      
-          // 開き方向で並び替え
-          panoramaWrapper.style.flexDirection = dirRight.checked ? 'row-reverse' : 'row';
-      
-          images.forEach((src, i) => {
-          const img = document.createElement('img');
-          img.src = src;
-          img.dataset.index = i;
-          panoramaWrapper.appendChild(img);
-        });
+        
+          // 現在のインデックスを保持したまま開き方向を切り替える
+          // （dirRight が true のとき row-reverse、false のとき row としている色々なロジックに合わせてください）
+          const newDir = dirRight.checked ? 'row-reverse' : 'row';
+          // 変更が実際に起きるときだけ処理（無駄な再flowを避ける）
+          if (panoramaWrapper.style.flexDirection !== newDir) {
+            // プログラムでスクロールするのでフラグを立てる
+            isProgrammaticScroll = true;
+        
+            // 切替前に現在の idx を読んでおく（念のため）
+            const currentIdx = Math.max(0, Math.min(images.length - 1, idx));
+        
+            // 切替（これだけでレイアウトが変わる）
+            panoramaWrapper.style.flexDirection = newDir;
+        
+            // 切替直後に現在の idx 要素へスクロールする
+            // タイミング問題を避けるため少し遅延して実行（ブラウザのレイアウトが落ち着くのを待つ）
+            setTimeout(() => {
+              const target = panoramaWrapper.querySelector(`img[data-index="${currentIdx}"]`);
+              if (target) {
+                // ボタン操作では smooth、ここは instant（切替なので瞬時に合わせる）
+                target.scrollIntoView({ behavior: "auto", inline: "center" });
+              }
+              // 遅延してフラグを戻す（スクロールイベントのデバウンス時間を考慮）
+              setTimeout(() => { isProgrammaticScroll = false; }, 120);
+            }, 20);
+          } else {
+            // flexDirection が変わらない場合は何もしない（DOM再構築もしない）
+            // ただし初回表示などで idx を画面に合わせたい場合は必要に応じてスクロールする
+            const target = panoramaWrapper.querySelector(`img[data-index="${idx}"]`);
+            if (target) {
+              // （初回表示で画面に合わせたいならコメント解除）
+              // target.scrollIntoView({ behavior: "auto", inline: "center" });
+            }
+          }
 
         } else if (spreadOn) {
           panoramaWrapper.style.display = 'none';
