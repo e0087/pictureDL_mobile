@@ -244,47 +244,53 @@
     }
 
     #viewerInner {
-      width: 100%;
-      max-width: 1100px;
-      height: 100%;
-      max-height: 95vh;
+      width: 100vw;
+      height: calc(100vh - 120px);
+      margin: 60px 0;
       display: flex;
       align-items: center;
       justify-content: center;
+      background: #000;
       box-sizing: border-box;
+      overflow: hidden;
     }
 
     #singleImage {
-      max-width: 100%;
+      width: 100%;
+      height: auto;
       max-height: 100%;
       object-fit: contain;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-      background: #000;
     }
 
     #spreadWrapper {
       display: flex;
-      gap: 0px;
-      align-items: center;
       justify-content: center;
+      /* align-items: center; */
       width: 100%;
       height: 100%;
+      background: #000;
+      gap: 0;
     }
 
-    .spreadSlot {
+    #spreadWrapper .spreadSlot {
       flex: 1;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 60vh;
       overflow: hidden;
     }
 
-    .spreadSlot img {
-      max-width: 100%;
-      max-height: 100%;
+    #spreadWrapper img {
+      height: auto;
+      width: auto;
       object-fit: contain;
-      display: block;
+      max-height: 100%;
+    }
+
+    #spreadLeft {
+      justify-content: flex-end;
+    }
+
+    #spreadRight {
+      justify-content: flex-start;
     }
 
     .viewerControls {
@@ -300,8 +306,8 @@
 
     .viewerBtn {
       padding: 10px 16px;
-      border: 1px solid #ccc;
-      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid #555;
+      background: rgba(20, 20, 20, 0.9);
       color: #fff;
       border-radius: 6px;
       font-size: 16px;
@@ -309,7 +315,7 @@
     }
 
     .viewerBtn:hover {
-      background: rgba(255, 255, 255, 0.12);
+      background: rgba(40, 40, 40, 1);
     }
 
     .fixedBtn {
@@ -317,7 +323,7 @@
       top: 12px;
       padding: 10px 16px;
       border: 1px solid #ccc;
-      background: rgba(255, 255, 255, 0.06);
+      background: rgba(30, 30, 30, 0.95);
       color: #fff;
       border-radius: 6px;
       font-size: 16px;
@@ -338,17 +344,9 @@
     }
 
     .fixedPageIndicator {
-      position: fixed;
-      top: 12px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: #fff;
-      font-size: 16px;
-      font-weight: bold;
-      background: rgba(0, 0, 0, 0.4);
+      background: rgba(0, 0, 0, 0.9);
       padding: 6px 12px;
       border-radius: 6px;
-      z-index: 10001;
     }
 
     /* Menu panel */
@@ -397,8 +395,13 @@
 
     @media (max-width:600px) {
       .viewerControls {
-        flex-direction: row;
+        position: fixed;
         bottom: 12px;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        z-index: 10000;
       }
 
       #menuPanel {
@@ -412,18 +415,40 @@
 
     #panoramaWrapper {
       display: none;
-      width: 100%;
-      height: 100%;
+      width: 100vw;
+      height: calc(100vh - 120px);
+      margin: 60px 0;
       overflow-x: auto;
+      overflow-y: hidden;
       white-space: nowrap;
       background: #000;
     }
+
     #panoramaWrapper img {
-      height: 95vh;
       display: inline-block;
+      height: 100%;
+      width: auto;
+      /* ← 常に高さ基準（モバイルでも変えない） */
       object-fit: contain;
+      vertical-align: middle;
+      margin: 0;
+      padding: 0;
     }
 
+    /* モバイル縦画面（600px以下）は横幅優先に変更 */
+    @media (max-aspect-ratio: 3/4) {
+  /* モバイルでは見開きのみ高さ基準に変更する */
+  #spreadWrapper img {
+    width: auto;
+    height: 100%;
+  }
+
+  /* シングルページは従来通り高さ優先 */
+  #singleImage {
+    width: auto;
+    height: 100%;
+  }
+}
   </style>
 </head>
 
@@ -494,9 +519,9 @@
       <label class="switch"><input type="checkbox" id="spreadSwitch"><span class="slider"></span></label>
     </div>
     <div class="menuRow">
-  <div>パノラマモード</div>
-    <label class="switch"><input type="checkbox" id="panoramaSwitch"><span class="slider"></span></label>
-  </div>
+      <div>パノラマモード</div>
+      <label class="switch"><input type="checkbox" id="panoramaSwitch"><span class="slider"></span></label>
+    </div>
     <div class="menuRow">
       <div>開き方向</div>
       <div>
@@ -734,7 +759,7 @@
           });
           return;
         }
-      
+
         // 数が変わっている／初回：一度だけ再構築
         panoramaWrapper.innerHTML = '';
         images.forEach((src, i) => {
@@ -749,13 +774,13 @@
       function updateImagesFromContainer() {
         const imgs = Array.from(document.querySelectorAll('#imageContainer img'));
         images = imgs.map(el => el.src);
-      
+
         // idx は初期状態のみ 0 のまま、それ以外は現在の idx を保持してクランプする
         if (idx >= images.length) idx = Math.max(0, images.length - 1);
-      
+
         // パノラマDOMを更新（初回作成／差分のみ）
         ensurePanoramaDOM();
-      
+
         if (viewerToggle.checked && images.length) openViewer();
       }
 
@@ -817,7 +842,7 @@
             text = `${p1} - ${p2}`;
           }
         } else {
-          text = (idx + 1).toString();          
+          text = (idx + 1).toString();
         }
         document.getElementById('pageIndicator').textContent = text;
       }
@@ -828,17 +853,17 @@
       function renderViewer() {
         const spreadOn = spreadSwitch.checked;
         const panoOn = panoramaSwitch.checked;
-      
+
         if (panoOn) {
           singleImage.style.display = 'none';
           spreadWrapper.style.display = 'none';
-        
+
           // まずパノラマDOMを確実に作る（初回のみ）
           ensurePanoramaDOM();
-        
+
           // 表示切替
           panoramaWrapper.style.display = 'flex';
-        
+
           // 現在のインデックスを保持したまま開き方向を切り替える
           // （dirRight が true のとき row-reverse、false のとき row としている色々なロジックに合わせてください）
           const newDir = dirRight.checked ? 'row-reverse' : 'row';
@@ -846,13 +871,13 @@
           if (panoramaWrapper.style.flexDirection !== newDir) {
             // プログラムでスクロールするのでフラグを立てる
             isProgrammaticScroll = true;
-        
+
             // 切替前に現在の idx を読んでおく（念のため）
             const currentIdx = Math.max(0, Math.min(images.length - 1, idx));
-        
+
             // 切替（これだけでレイアウトが変わる）
             panoramaWrapper.style.flexDirection = newDir;
-        
+
             // 切替直後に現在の idx 要素へスクロールする
             // タイミング問題を避けるため少し遅延して実行（ブラウザのレイアウトが落ち着くのを待つ）
             setTimeout(() => {
@@ -878,9 +903,9 @@
           panoramaWrapper.style.display = 'none';
           singleImage.style.display = 'none';
           spreadWrapper.style.display = 'flex';
-      
+
           const dir = dirRight.checked ? 'right' : 'left';
-      
+
           let pairStart;
           if (shiftSwitch && shiftSwitch.checked) {
             pairStart = Math.floor((idx - 1) / 2) * 2 + 1;
@@ -888,7 +913,7 @@
           } else {
             pairStart = Math.floor(idx / 2) * 2;
           }
-      
+
           let leftIndex, rightIndex;
           if (dir === 'left') {
             leftIndex = pairStart;
@@ -897,17 +922,17 @@
             leftIndex = pairStart + 1;
             rightIndex = pairStart;
           }
-      
+
           spreadLeftImg.src = images[leftIndex] || '';
           spreadRightImg.src = images[rightIndex] || '';
-      
+
         } else {
           panoramaWrapper.style.display = 'none';
           spreadWrapper.style.display = 'none';
           singleImage.style.display = 'block';
           singleImage.src = images[idx] || '';
         }
-      
+
         // ページインジケーター更新
         updatePageIndicator();
       }
@@ -927,19 +952,19 @@
         } else if (spreadOn) {
           const step = 2;
           if (idx + step < images.length) {
-            idx += step; 
+            idx += step;
           } else {
             idx = Math.max(0, images.length - 1);
           }
-          renderViewer(); 
+          renderViewer();
         } else {
           if (idx < images.length - 1) {
             idx++;
             renderViewer();
           }
-        }          
+        }
       }
-      
+
       function prev() {
         const spreadOn = spreadSwitch.checked;
         const panoOn = panoramaSwitch.checked;
@@ -954,10 +979,10 @@
         } else if (spreadOn) {
           const step = 2;
           if (idx - step >= 0) {
-              idx -= step;
-            } else {
-              idx = 0;
-            }
+            idx -= step;
+          } else {
+            idx = 0;
+          }
           renderViewer();
         } else {
           if (idx > 0) {
@@ -1005,11 +1030,11 @@
         // タッチ開始の X を記録（パノラマ時も記録しておく）
         touchStartX = e.changedTouches[0].clientX;
       }, { passive: true });
-      
+
       viewerOverlay.addEventListener('touchend', function (e) {
         if (touchStartX == null) return;
         const dx = e.changedTouches[0].clientX - touchStartX;
-      
+
         // ★ パノラマモードなら「スワイプでの prev/next を行わない」
         //    （パノラマは自由スクロールが優先）
         if (panoramaSwitch.checked) {
@@ -1017,7 +1042,7 @@
           // ※ スクロールで idx は scroll イベントで更新されるのでここでは何もしない
           return;
         }
-      
+
         // パノラマでなければ（通常の単ページ／見開き）スワイプでページ操作
         if (Math.abs(dx) > 40) {
           if (dirRight.checked) {
@@ -1030,7 +1055,7 @@
             else prev();
           }
         }
-      
+
         touchStartX = null;
       }, { passive: true });
 
