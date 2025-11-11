@@ -545,6 +545,12 @@
   <script src="https://cdn.jsdelivr.net/npm/file-saver/dist/FileSaver.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
+      const params = new URLSearchParams(window.location.search);
+      const prefillUrl = params.get('url');
+      if (prefillUrl) {
+        const input = document.getElementById('textInput');
+        input.value = decodeURIComponent(prefillUrl);
+      }
       const extensions = ['.jpg', '.png', '.jpeg', '.webp'];
       const progressCircle = document.querySelector('.progress-circle');
       const progressText = document.querySelector('.progress-text');
