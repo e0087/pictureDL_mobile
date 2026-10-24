@@ -727,7 +727,7 @@
       let activeArchiveProgressKey = null;
       let activeArchiveProgressName = '';
       let activeArchivePageNames = [];
-      const archiveProgressStoragePrefix = 'pictureDL:reading-position:v2:';
+      const archiveProgressStoragePrefix = 'pictureDL:reading-position:v3:';
 
       function getArchiveProgressKey(fileName) {
         const normalizedName = fileName
@@ -750,10 +750,24 @@
 
       function saveArchiveProgress() {
         if (!activeArchiveProgressKey || !images.length) return;
+
+        const maxPage = images.length;
+        const currentPage = Math.max(1, Math.min(maxPage, idx + 1));
+        const lastVisibleIndex = spreadSwitch.checked && !panoramaSwitch.checked
+          ? Math.min(maxPage - 1, getSpreadPairStart(idx) + 1)
+          : idx;
+
         try {
+          // 先頭または最後の見開きまで読んだ状態は保存せず、既存記録も削除する
+          if (currentPage === 1 || lastVisibleIndex >= maxPage - 1) {
+            localStorage.removeItem(activeArchiveProgressKey);
+            return;
+          }
+
           localStorage.setItem(activeArchiveProgressKey, JSON.stringify({
             archiveName: activeArchiveProgressName,
-            page: Math.max(1, Math.min(images.length, idx + 1)),
+            page: currentPage,
+            maxPage: maxPage,
             pageName: activeArchivePageNames[idx] || '',
             updatedAt: Date.now()
           }));
