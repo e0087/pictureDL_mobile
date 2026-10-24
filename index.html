@@ -678,6 +678,10 @@
       const archiveFileInput = document.getElementById('archiveFileInput');
       const openArchiveBtn = document.getElementById('openArchiveBtn');
       let archiveObjectUrls = [];
+      function releaseArchiveObjectUrls() {
+        archiveObjectUrls.forEach(url => URL.revokeObjectURL(url));
+        archiveObjectUrls = [];
+      }
       const archiveImageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.avif'];
       const archiveFileCollator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
 
@@ -694,8 +698,7 @@
         if (!entries.length) throw new Error('書庫内に画像ファイルが見つかりませんでした。');
         entries.sort((a, b) => archiveFileCollator.compare(a.name, b.name));
 
-        archiveObjectUrls.forEach(url => URL.revokeObjectURL(url));
-        archiveObjectUrls = [];
+        releaseArchiveObjectUrls();
         const fragment = document.createDocumentFragment();
         entries.forEach((entry, index) => {
           const url = URL.createObjectURL(new Blob([entry.data], { type: imageMimeType(entry.name) }));
@@ -717,7 +720,6 @@
         document.getElementById('imageContainer').replaceChildren(fragment);
         document.getElementById('errorContainer').textContent = `${archiveName} から画像を ${entries.length} 枚読み込みました。`;
         updateImagesFromContainer();
-        if (viewerToggle.checked && images.length) openViewer();
       }
 
       async function openZipArchive(file) {
@@ -780,11 +782,20 @@
       document.getElementById('viewerInner').appendChild(panoramaWrapper);
       let isProgrammaticScroll = false;
       let panoramaScrollTimeout = null;
+      let panoramaProgrammaticUnlockTimer = null;
       panoramaWrapper.addEventListener('scroll', function () {
         if (!panoramaSwitch.checked) return;
-        if (isProgrammaticScroll) return; // ← 追加（プログラムスクロール中は無視）
+        if (isProgrammaticScroll) {
+          if (panoramaProgrammaticUnlockTimer) clearTimeout(panoramaProgrammaticUnlockTimer);
+          panoramaProgrammaticUnlockTimer = setTimeout(function () {
+            isProgrammaticScroll = false;
+            panoramaProgrammaticUnlockTimer = null;
+          }, 160);
+          return;
+        }
         if (panoramaScrollTimeout) clearTimeout(panoramaScrollTimeout);
         panoramaScrollTimeout = setTimeout(function () {
+          if (isProgrammaticScroll) return;
           const imgs = Array.from(panoramaWrapper.querySelectorAll('img'));
           if (!imgs.length) return;
           const wrapperRect = panoramaWrapper.getBoundingClientRect();
@@ -808,11 +819,10 @@
         }, 80);
       }, { passive: true });
 
-      // --- 画像表示エリアの三分割タップ制御 ---
-      const viewerInner = document.getElementById('viewerInner');
-      viewerInner.addEventListener('click', function (e) {
-        // メニューなど他要素クリックは無視
-        if (e.target !== viewerInner && e.target.tagName !== 'IMG') return;
+      // --- ビューア全体の三分割タップ制御 ---
+      viewerOverlay.addEventListener('click', function (e) {
+        // 操作ボタン上のタップはページ操作に使わない
+        if (e.target.closest('.viewerControls')) return;
 
         const rect = viewerOverlay.getBoundingClientRect();
         const x = e.clientX - rect.left;
@@ -860,6 +870,7 @@
         progressText.style.display = 'none';
         setProgress(0);
       
+        releaseArchiveObjectUrls();
         document.getElementById('imageContainer').innerHTML = '';
         errorContainer.innerText = '';
       
@@ -1049,19 +1060,6 @@
         });
       }
 
-      function updateImagesFromContainer() {
-        const imgs = Array.from(document.querySelectorAll('#imageContainer img'));
-        images = imgs.map(el => el.src);
-
-        // idx は初期状態のみ 0 のまま、それ以外は現在の idx を保持してクランプする
-        if (idx >= images.length) idx = Math.max(0, images.length - 1);
-
-        // パノラマDOMを更新（初回作成／差分のみ）
-        ensurePanoramaDOM();
-
-        if (viewerToggle.checked && images.length) openViewer();
-      }
-
       async function downloadImages() {
         loader.style.display = 'block';
         fixedLoder.style.display = 'none';
@@ -1092,6 +1090,12 @@
       window.displayImages = displayImages;
       window.downloadImages = downloadImages;
 
+      function getSpreadPairStart(pageIndex) {
+        if (shiftSwitch.checked) return Math.floor(pageIndex / 2) * 2;
+        if (pageIndex === 0) return 0; // 表紙は単独表示
+        return Math.floor((pageIndex - 1) / 2) * 2 + 1;
+      }
+
       function updatePageIndicator() {
         const indicator = document.getElementById('pageIndicator');
         if (!indicator) return;
@@ -1103,21 +1107,19 @@
         if (panoOn) {
           text = (idx + 1).toString();
         } else if (spreadOn) {
-          let pairStart;
-          if (shiftSwitch && shiftSwitch.checked) {
-            pairStart = Math.floor((idx - 1) / 2) * 2 + 1;
-            if (pairStart < 0) pairStart = 0;
+          if (!shiftSwitch.checked && idx === 0) {
+            text = '1';
           } else {
-            pairStart = Math.floor(idx / 2) * 2;
-          }
-          const p1 = pairStart + 1;
-          const p2 = pairStart + 2;
-          if (p1 > images.length) {
-            text = "";
-          } else if (p2 > images.length) {
-            text = p1.toString();
-          } else {
-            text = `${p1} - ${p2}`;
+            const pairStart = getSpreadPairStart(idx);
+            const p1 = pairStart + 1;
+            const p2 = pairStart + 2;
+            if (p1 > images.length) {
+              text = "";
+            } else if (p2 > images.length) {
+              text = p1.toString();
+            } else {
+              text = `${p1} - ${p2}`;
+            }
           }
         } else {
           text = (idx + 1).toString();
@@ -1147,26 +1149,9 @@
           const newDir = dirRight.checked ? 'row-reverse' : 'row';
           // 変更が実際に起きるときだけ処理（無駄な再flowを避ける）
           if (panoramaWrapper.style.flexDirection !== newDir) {
-            // プログラムでスクロールするのでフラグを立てる
-            isProgrammaticScroll = true;
-
-            // 切替前に現在の idx を読んでおく（念のため）
             const currentIdx = Math.max(0, Math.min(images.length - 1, idx));
-
-            // 切替（これだけでレイアウトが変わる）
             panoramaWrapper.style.flexDirection = newDir;
-
-            // 切替直後に現在の idx 要素へスクロールする
-            // タイミング問題を避けるため少し遅延して実行（ブラウザのレイアウトが落ち着くのを待つ）
-            setTimeout(() => {
-              const target = panoramaWrapper.querySelector(`img[data-index="${currentIdx}"]`);
-              if (target) {
-                // ボタン操作では smooth、ここは instant（切替なので瞬時に合わせる）
-                target.scrollIntoView({ behavior: "auto", inline: "center" });
-              }
-              // 遅延してフラグを戻す（スクロールイベントのデバウンス時間を考慮）
-              setTimeout(() => { isProgrammaticScroll = false; }, 120);
-            }, 20);
+            setTimeout(() => scrollToPanoramaIndex(currentIdx, 'auto'), 20);
           } else {
             // flexDirection が変わらない場合は何もしない（DOM再構築もしない）
             // ただし初回表示などで idx を画面に合わせたい場合は必要に応じてスクロールする
@@ -1184,25 +1169,26 @@
 
           const dir = dirRight.checked ? 'right' : 'left';
 
-          let pairStart;
-          if (shiftSwitch && shiftSwitch.checked) {
-            pairStart = Math.floor((idx - 1) / 2) * 2 + 1;
-            if (pairStart < 0) pairStart = 0;
+          let leftIndex = -1, rightIndex = -1;
+          if (!shiftSwitch.checked && idx === 0) {
+            // 表紙は開き方向に応じた外側のページ位置へ単独で置く
+            if (dir === 'left') leftIndex = 0;
+            else rightIndex = 0;
           } else {
-            pairStart = Math.floor(idx / 2) * 2;
-          }
-
-          let leftIndex, rightIndex;
-          if (dir === 'left') {
-            leftIndex = pairStart;
-            rightIndex = pairStart + 1;
-          } else {
-            leftIndex = pairStart + 1;
-            rightIndex = pairStart;
+            const pairStart = getSpreadPairStart(idx);
+            if (dir === 'left') {
+              leftIndex = pairStart;
+              rightIndex = pairStart + 1;
+            } else {
+              leftIndex = pairStart + 1;
+              rightIndex = pairStart;
+            }
           }
 
           spreadLeftImg.src = images[leftIndex] || '';
           spreadRightImg.src = images[rightIndex] || '';
+          spreadLeftImg.style.visibility = leftIndex >= 0 && images[leftIndex] ? 'visible' : 'hidden';
+          spreadRightImg.style.visibility = rightIndex >= 0 && images[rightIndex] ? 'visible' : 'hidden';
 
         } else {
           panoramaWrapper.style.display = 'none';
@@ -1223,17 +1209,12 @@
         if (panoOn) {
           if (idx < images.length - 1) {
             idx++;
-            const target = panoramaWrapper.querySelector(`img[data-index="${idx}"]`);
-            if (target) target.scrollIntoView({ behavior: "smooth", inline: "start" });
+            scrollToPanoramaIndex(idx, 'smooth');
           }
           updatePageIndicator();
         } else if (spreadOn) {
-          const step = 2;
-          if (idx + step < images.length) {
-            idx += step;
-          } else {
-            idx = Math.max(0, images.length - 1);
-          }
+          const nextIndex = !shiftSwitch.checked && idx === 0 ? 1 : idx + 2;
+          if (nextIndex < images.length) idx = nextIndex;
           renderViewer();
         } else {
           if (idx < images.length - 1) {
@@ -1250,17 +1231,13 @@
         if (panoOn) {
           if (idx > 0) {
             idx--;
-            const target = panoramaWrapper.querySelector(`img[data-index="${idx}"]`);
-            if (target) target.scrollIntoView({ behavior: "smooth", inline: "start" });
+            scrollToPanoramaIndex(idx, 'smooth');
           }
           updatePageIndicator();
         } else if (spreadOn) {
-          const step = 2;
-          if (idx - step >= 0) {
-            idx -= step;
-          } else {
-            idx = 0;
-          }
+          if (shiftSwitch.checked) idx = Math.max(0, idx - 2);
+          else if (idx === 1) idx = 0;
+          else if (idx > 1) idx -= 2;
           renderViewer();
         } else {
           if (idx > 0) {
@@ -1278,11 +1255,7 @@
         if (panoramaSwitch.checked) {
           // パノラマならスクロールで先頭に飛ばしてインジケータを更新
           idx = 0;
-          const target = panoramaWrapper.querySelector('img[data-index="0"]');
-          if (target) {
-            // smooth でスナップさせる（必要なら inline: "start" に変更可）
-            target.scrollIntoView({ behavior: "smooth", inline: "start" });
-          }
+          scrollToPanoramaIndex(0, 'smooth');
           updatePageIndicator();
         } else {
           // 単ページ／見開きは既存のレンダーで対応
@@ -1291,8 +1264,6 @@
         }
       });
 
-      // background click to close (but not when clicking inner content)
-      viewerOverlay.addEventListener('click', function (e) { if (e.target === viewerOverlay) { closeViewer(); } });
 
       // keyboard
       document.addEventListener('keydown', function (e) {
@@ -1387,9 +1358,13 @@
       menuPanel.addEventListener('click', function (e) { e.stopPropagation(); });
 
       // re-render when spread/direction change
-      spreadSwitch.addEventListener('change', function () { // when enabling spread, align idx to pair start
-        if (spreadSwitch.checked) { idx = Math.floor(idx / 2) * 2; }
+      spreadSwitch.addEventListener('change', function () {
+        if (spreadSwitch.checked) idx = getSpreadPairStart(idx);
         panoramaSwitch.checked = false;
+        renderViewer();
+      });
+      shiftSwitch.addEventListener('change', function () {
+        if (spreadSwitch.checked) idx = getSpreadPairStart(idx);
         renderViewer();
       });
       panoramaSwitch.addEventListener('change', function () {
@@ -1402,6 +1377,21 @@
       dirLeft.addEventListener('change', function () { renderViewer(); });
 
       // utility
+      function scrollToPanoramaIndex(pageIndex, behavior) {
+        const target = panoramaWrapper.querySelector(`img[data-index="${pageIndex}"]`);
+        if (!target) return;
+        if (panoramaScrollTimeout) {
+          clearTimeout(panoramaScrollTimeout);
+          panoramaScrollTimeout = null;
+        }
+        if (panoramaProgrammaticUnlockTimer) clearTimeout(panoramaProgrammaticUnlockTimer);
+        isProgrammaticScroll = true;
+        target.scrollIntoView({ behavior: behavior, inline: 'center' });
+        panoramaProgrammaticUnlockTimer = setTimeout(function () {
+          isProgrammaticScroll = false;
+          panoramaProgrammaticUnlockTimer = null;
+        }, behavior === 'smooth' ? 500 : 180);
+      }
       function updateImagesFromContainer() {
         const imgs = Array.from(document.querySelectorAll('#imageContainer img'));
         images = imgs.map(i => i.src);
