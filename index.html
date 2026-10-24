@@ -552,6 +552,75 @@
         input.value = decodeURIComponent(prefillUrl);
       }
       const extensions = ['.jpg', '.png', '.jpeg', '.webp'];
+      
+      // URLのパスが画像ファイルかどうかを判定する
+      function isDirectImageUrl(value) {
+        try {
+          const url = new URL(value);
+          return /\.(jpe?g|png|webp)$/i.test(url.pathname);
+        } catch {
+          return false;
+        }
+      }
+
+      // ページURLから画像URLを抽出する
+      async function extractImageUrlFromPage(pageUrl) {
+        let url;
+
+        try {
+          url = new URL(pageUrl);
+        } catch {
+          throw new Error('正しいURLを入力してください。');
+        }
+
+        if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+          throw new Error('http または https のURLを入力してください。');
+        }
+
+        const response = await fetch(url.href);
+
+        if (!response.ok) {
+          throw new Error(
+            `ページの取得に失敗しました (HTTP ${response.status})`
+          );
+        }
+
+        const html = await response.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+
+        // 指定された要素の中から画像を探す
+        const container = doc.querySelector('section#image-container');
+
+        if (!container) {
+          throw new Error(
+            'section#image-container が見つかりません。'
+          );
+        }
+
+        const candidates = Array.from(
+          container.querySelectorAll('img[src], img[data-src]')
+        );
+
+        // 対応する画像形式のURLを持つ最初の画像を選ぶ
+        for (const img of candidates) {
+          const src =
+            img.getAttribute('src') ||
+            img.getAttribute('data-src');
+
+          if (!src) continue;
+
+          const imageUrl = new URL(src, url.href);
+
+          if (isDirectImageUrl(imageUrl.href)) {
+            return imageUrl.href;
+          }
+        }
+
+        throw new Error(
+          '対象要素内に jpg、jpeg、png、webp の画像が見つかりません。'
+        );
+      }
+      
       const progressCircle = document.querySelector('.progress-circle');
       const progressText = document.querySelector('.progress-text');
       const loader = document.getElementById('loader');
@@ -640,15 +709,53 @@
         progressText.textContent = v + '%';
       }
 
-      window.processDisplay = function () {
+      
+      window.processDisplay = async function () {
         const isLinkMode = document.getElementById('linkToggle').checked;
+        const input = document.getElementById('textInput');
+        const errorContainer = document.getElementById('errorContainer');
+      
         loader.style.display = 'none';
         fixedLoder.style.display = 'block';
         progressText.style.display = 'none';
         setProgress(0);
+      
         document.getElementById('imageContainer').innerHTML = '';
-        document.getElementById('errorContainer').innerText = '';
-        if (isLinkMode) generateLinks(); else displayImages();
+        errorContainer.innerText = '';
+      
+        try {
+          const url = input.value.trim();
+      
+          if (!url) {
+            throw new Error('URLを入力してください。');
+          }
+      
+          // 画像URLなら従来の処理を使用
+          // ページURLならHTMLから画像URLを抽出する
+          if (!isDirectImageUrl(url)) {
+            errorContainer.innerText = 'ページから画像URLを取得中...';
+      
+            const imageUrl = await extractImageUrlFromPage(url);
+      
+            // 抽出した画像URLを既存処理に渡す
+            input.value = imageUrl;
+            errorContainer.innerText = '';
+          }
+      
+          if (isLinkMode) {
+            generateLinks();
+          } else {
+            displayImages();
+          }
+        } catch (error) {
+          console.error('画像URL取得エラー:', error);
+      
+          errorContainer.innerText =
+            'エラー: ' + (error.message || '画像URLを取得できませんでした。');
+      
+          loader.style.display = 'none';
+          fixedLoder.style.display = 'none';
+        }
       };
 
       function generateLinks() {
