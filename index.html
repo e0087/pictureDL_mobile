@@ -468,6 +468,7 @@
         <li>「画像URL入力フォーム」にペースト。</li>
         <li>「画像表示」ボタンを押下。</li>
         <li>「一括保存」ボタンを押下し、すべての画像が保存されます。</li>
+        <li>手元の ZIP / RAR を開く場合は、書庫ファイルを選択して「書庫を開く」を押下。</li>
       </ol>
       <div style="margin-top:10px;"><strong>▼モード切替</strong></div>
       <label class="switch"><input type="checkbox" id="linkToggle"><span class="slider"></span></label> リンク表示モード
@@ -484,6 +485,10 @@
   <div class="input-group">
     <input type="search" id="zipFileNameInput" placeholder="zipファイル名(オプション)">
     <button onclick="downloadImages()">一括保存</button>
+  </div>
+  <div class="input-group">
+    <input type="file" id="archiveFileInput" accept=".zip,.rar,application/zip,application/vnd.rar">
+    <button id="openArchiveBtn" type="button">書庫を開く</button>
   </div>
 
   <div id="errorContainer"></div>
@@ -547,6 +552,30 @@
 
   <script src="https://cdn.jsdelivr.net/npm/jszip/dist/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/file-saver/dist/FileSaver.min.js"></script>
+  <script type="module">
+    window.extractRarImages = async function (file) {
+      const moduleUrl = 'https://cdn.jsdelivr.net/npm/node-unrar-js@2.0.2/esm/index.js';
+      const wasmUrl = 'https://cdn.jsdelivr.net/npm/node-unrar-js@2.0.2/esm/js/unrar.wasm';
+      const [{ createExtractorFromData }, wasmBinary, data] = await Promise.all([
+        import(moduleUrl),
+        fetch(wasmUrl).then(response => {
+          if (!response.ok) throw new Error('RAR展開モジュールを取得できませんでした。');
+          return response.arrayBuffer();
+        }),
+        file.arrayBuffer()
+      ]);
+      const extractor = await createExtractorFromData({ data, wasmBinary });
+      const { files } = extractor.extract();
+      const entries = [];
+      for (const item of files) {
+        const name = item.fileHeader.name;
+        if (!item.fileHeader.flags.directory && item.extraction && /\.(jpe?g|png|webp|gif|bmp|avif)$/i.test(name)) {
+          entries.push({ name, data: item.extraction });
+        }
+      }
+      return entries;
+    };
+  </script>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       const params = new URLSearchParams(window.location.search);
@@ -645,6 +674,90 @@
       const loader = document.getElementById('loader');
       const fixedLoder = document.querySelector('.fixed-loder');
 
+      // --- ローカルの ZIP / RAR から画像を読み込む ---
+      const archiveFileInput = document.getElementById('archiveFileInput');
+      const openArchiveBtn = document.getElementById('openArchiveBtn');
+      let archiveObjectUrls = [];
+      const archiveImageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.avif'];
+      const archiveFileCollator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+
+      function isArchiveImage(path) {
+        return archiveImageExtensions.some(ext => path.toLowerCase().endsWith(ext));
+      }
+
+      function imageMimeType(path) {
+        const ext = path.toLowerCase().slice(path.lastIndexOf('.'));
+        return ({ '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.gif': 'image/gif', '.bmp': 'image/bmp', '.avif': 'image/avif' })[ext] || 'application/octet-stream';
+      }
+
+      function renderArchiveImages(entries, archiveName) {
+        if (!entries.length) throw new Error('書庫内に画像ファイルが見つかりませんでした。');
+        entries.sort((a, b) => archiveFileCollator.compare(a.name, b.name));
+
+        archiveObjectUrls.forEach(url => URL.revokeObjectURL(url));
+        archiveObjectUrls = [];
+        const fragment = document.createDocumentFragment();
+        entries.forEach((entry, index) => {
+          const url = URL.createObjectURL(new Blob([entry.data], { type: imageMimeType(entry.name) }));
+          archiveObjectUrls.push(url);
+          const wrap = document.createElement('div');
+          wrap.className = 'imageContainer';
+          const img = document.createElement('img');
+          img.src = url;
+          img.alt = entry.name;
+          img.loading = 'lazy';
+          const number = document.createElement('div');
+          number.className = 'imageNumber';
+          number.textContent = String(index + 1);
+          wrap.appendChild(img);
+          wrap.appendChild(number);
+          fragment.appendChild(wrap);
+        });
+
+        document.getElementById('imageContainer').replaceChildren(fragment);
+        document.getElementById('errorContainer').textContent = `${archiveName} から画像を ${entries.length} 枚読み込みました。`;
+        updateImagesFromContainer();
+        if (viewerToggle.checked && images.length) openViewer();
+      }
+
+      async function openZipArchive(file) {
+        const zip = await JSZip.loadAsync(file);
+        const imageFiles = Object.values(zip.files)
+          .filter(entry => !entry.dir && isArchiveImage(entry.name))
+          .sort((a, b) => archiveFileCollator.compare(a.name, b.name));
+        const entries = await Promise.all(imageFiles.map(async entry => ({
+          name: entry.name,
+          data: await entry.async('uint8array')
+        })));
+        renderArchiveImages(entries, file.name);
+      }
+
+      async function openRarArchive(file) {
+        if (!window.extractRarImages) throw new Error('RAR読み込みライブラリを読み込めませんでした。ネットワーク接続を確認してください。');
+        const entries = await window.extractRarImages(file);
+        renderArchiveImages(entries, file.name);
+      }
+
+      openArchiveBtn.addEventListener('click', async function () {
+        const file = archiveFileInput.files && archiveFileInput.files[0];
+        if (!file) {
+          document.getElementById('errorContainer').textContent = 'ZIP または RAR ファイルを選択してください。';
+          return;
+        }
+
+        openArchiveBtn.disabled = true;
+        document.getElementById('errorContainer').textContent = '書庫を展開しています...';
+        try {
+          if (/\.zip$/i.test(file.name)) await openZipArchive(file);
+          else if (/\.rar$/i.test(file.name)) await openRarArchive(file);
+          else throw new Error('対応している形式は ZIP と RAR です。');
+        } catch (error) {
+          console.error('書庫の読み込みエラー:', error);
+          document.getElementById('errorContainer').textContent = '書庫を開けませんでした: ' + (error.message || 'ファイル形式または内容を確認してください。');
+        } finally {
+          openArchiveBtn.disabled = false;
+        }
+      });
       // viewer elements
       const viewerToggle = document.getElementById('viewerToggle');
       const viewerOverlay = document.getElementById('viewerOverlay');
