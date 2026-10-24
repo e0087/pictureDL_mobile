@@ -577,7 +577,22 @@
           throw new Error('http または https のURLを入力してください。');
         }
 
-        const response = await fetch(url.href);
+        let response;
+
+        try {
+          response = await fetch(url.href);
+        } catch (error) {
+          throw new Error(
+            'ページ取得時の通信エラー。CORS、拡張機能、通信制限を確認してください。' +
+            ' 詳細: ' + error.message
+          );
+        }
+        
+        if (!response.ok) {
+          throw new Error(
+            `ページ取得失敗: HTTP ${response.status}`
+          );
+        }
 
         if (!response.ok) {
           throw new Error(
@@ -620,7 +635,7 @@
           '対象要素内に jpg、jpeg、png、webp の画像が見つかりません。'
         );
       }
-      
+
       const progressCircle = document.querySelector('.progress-circle');
       const progressText = document.querySelector('.progress-text');
       const loader = document.getElementById('loader');
