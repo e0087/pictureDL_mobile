@@ -298,9 +298,58 @@
       left: 0;
       bottom: 10px;
       display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      z-index: 10000;
+    }
+
+    .viewerNavButtons {
+      display: flex;
       justify-content: center;
       gap: 10px;
-      z-index: 10000;
+    }
+
+    #pageSlider {
+      box-sizing: border-box;
+      width: 100vw;
+      max-width: none;
+      height: 24px;
+      margin: 0;
+      padding: 0;
+      appearance: none;
+      -webkit-appearance: none;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    #pageSlider::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.55);
+    }
+
+    #pageSlider::-webkit-slider-thumb {
+      width: 16px;
+      height: 16px;
+      margin-top: -6px;
+      border: 0;
+      border-radius: 50%;
+      background: #4da3ff;
+      -webkit-appearance: none;
+    }
+
+    #pageSlider::-moz-range-track {
+      height: 4px;
+      background: rgba(255, 255, 255, 0.55);
+    }
+
+    #pageSlider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border: 0;
+      border-radius: 50%;
+      background: #4da3ff;
     }
 
     #viewerOverlay.viewer-ui-hidden .viewerControls {
@@ -398,13 +447,7 @@
 
     @media (max-width:600px) {
       .viewerControls {
-        position: fixed;
         bottom: 12px;
-        width: 100%;
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-        z-index: 10000;
       }
 
       #menuPanel {
@@ -514,9 +557,12 @@
       <button id="menuBtn" class="fixedBtn menuBtn">≡</button>
       <div id="pageIndicator" class="fixedBtn PageIndicator">1</div>
       <button id="closeBtn" class="fixedBtn closeBtn">✕</button>
-      <button class="viewerBtn" id="prevBtn" type="button">◀</button>
-      <button class="viewerBtn" id="firstBtn" type="button">1ページ目</button>
-      <button class="viewerBtn" id="nextBtn" type="button">▶</button>
+      <div class="viewerNavButtons">
+        <button class="viewerBtn" id="prevBtn" type="button">◀</button>
+        <button class="viewerBtn" id="firstBtn" type="button">1ページ目</button>
+        <button class="viewerBtn" id="nextBtn" type="button">▶</button>
+      </div>
+      <input id="pageSlider" type="range" min="0" max="0" value="0" aria-label="表示ページ">
     </div>
   </div>
 
@@ -678,6 +724,44 @@
       const archiveFileInput = document.getElementById('archiveFileInput');
       const openArchiveBtn = document.getElementById('openArchiveBtn');
       let archiveObjectUrls = [];
+      let activeArchiveProgressKey = null;
+      let activeArchiveProgressName = '';
+      let activeArchivePageNames = [];
+      const archiveProgressStoragePrefix = 'pictureDL:reading-position:v2:';
+
+      function getArchiveProgressKey(fileName) {
+        const normalizedName = fileName
+          .normalize('NFKC')
+          .toLocaleLowerCase('ja-JP')
+          .replace(/\.(zip|rar)$/i, '')
+          .replace(/\d+(?=\D*$)/, '{volume}');
+        return archiveProgressStoragePrefix + normalizedName;
+      }
+
+      function readArchiveProgress(key) {
+        try {
+          const value = localStorage.getItem(key);
+          return value ? JSON.parse(value) : null;
+        } catch (error) {
+          console.warn('読書位置を読み込めませんでした:', error);
+          return null;
+        }
+      }
+
+      function saveArchiveProgress() {
+        if (!activeArchiveProgressKey || !images.length) return;
+        try {
+          localStorage.setItem(activeArchiveProgressKey, JSON.stringify({
+            archiveName: activeArchiveProgressName,
+            page: Math.max(1, Math.min(images.length, idx + 1)),
+            pageName: activeArchivePageNames[idx] || '',
+            updatedAt: Date.now()
+          }));
+        } catch (error) {
+          console.warn('読書位置を保存できませんでした:', error);
+        }
+      }
+
       function releaseArchiveObjectUrls() {
         archiveObjectUrls.forEach(url => URL.revokeObjectURL(url));
         archiveObjectUrls = [];
@@ -697,6 +781,25 @@
       function renderArchiveImages(entries, archiveName) {
         if (!entries.length) throw new Error('書庫内に画像ファイルが見つかりませんでした。');
         entries.sort((a, b) => archiveFileCollator.compare(a.name, b.name));
+
+        activeArchiveProgressKey = getArchiveProgressKey(archiveName);
+        activeArchiveProgressName = archiveName;
+        activeArchivePageNames = entries.map(entry => entry.name);
+        const savedProgress = readArchiveProgress(activeArchiveProgressKey);
+        const isSameArchiveFile = savedProgress && savedProgress.archiveName
+          && savedProgress.archiveName.normalize('NFKC').toLocaleLowerCase('ja-JP')
+            === archiveName.normalize('NFKC').toLocaleLowerCase('ja-JP');
+        const savedPageNameIndex = isSameArchiveFile && savedProgress.pageName
+          ? activeArchivePageNames.indexOf(savedProgress.pageName)
+          : -1;
+        const savedPageIndex = isSameArchiveFile
+          ? (savedPageNameIndex >= 0
+            ? savedPageNameIndex
+            : Number(savedProgress.page) - 1)
+          : 0;
+        idx = Number.isFinite(savedPageIndex)
+          ? Math.max(0, Math.min(entries.length - 1, savedPageIndex))
+          : 0;
 
         releaseArchiveObjectUrls();
         const fragment = document.createDocumentFragment();
@@ -775,6 +878,7 @@
       const menuCloseBtn = document.getElementById('menuCloseBtn');
       const menuDownloadBtn = document.getElementById('menuDownloadBtn');
       const firstBtn = document.getElementById('firstBtn');
+      const pageSlider = document.getElementById('pageSlider');
       const shiftSwitch = document.getElementById('shiftSwitch');
       const panoramaSwitch = document.getElementById('panoramaSwitch');
       const panoramaWrapper = document.createElement('div');
@@ -853,6 +957,7 @@
 
       let images = []; // list of image URLs
       let idx = 0;
+      let pageSliderInteracting = false;
 
       function setProgress(v) {
         progressCircle.style.setProperty('--progress', v);
@@ -870,6 +975,9 @@
         progressText.style.display = 'none';
         setProgress(0);
       
+        activeArchiveProgressKey = null;
+        activeArchiveProgressName = '';
+        activeArchivePageNames = [];
         releaseArchiveObjectUrls();
         document.getElementById('imageContainer').innerHTML = '';
         errorContainer.innerText = '';
@@ -1044,7 +1152,8 @@
         const existing = Array.from(panoramaWrapper.querySelectorAll('img'));
         if (existing.length === images.length) {
           existing.forEach((el, i) => {
-            if (el.src !== images[i]) el.src = images[i] || '';
+            if (images[i] && el.src !== images[i]) el.src = images[i];
+            else if (!images[i]) el.removeAttribute('src');
           });
           return;
         }
@@ -1054,7 +1163,7 @@
         images.forEach((src, i) => {
           const img = document.createElement('img');
           img.dataset.index = i;
-          img.src = src || '';
+          if (src) img.src = src;
           img.alt = 'p' + (i + 1);
           panoramaWrapper.appendChild(img);
         });
@@ -1096,7 +1205,7 @@
         return Math.floor((pageIndex - 1) / 2) * 2 + 1;
       }
 
-      function updatePageIndicator() {
+      function updatePageIndicator(saveProgress = true) {
         const indicator = document.getElementById('pageIndicator');
         if (!indicator) return;
 
@@ -1125,12 +1234,18 @@
           text = (idx + 1).toString();
         }
         document.getElementById('pageIndicator').textContent = text;
+        pageSlider.max = String(Math.max(0, images.length - 1));
+        if (!pageSliderInteracting) {
+          pageSlider.value = String(images.length ? Math.max(0, Math.min(images.length - 1, idx)) : 0);
+        }
+        pageSlider.style.direction = dirRight.checked ? 'rtl' : 'ltr';
+        if (saveProgress) saveArchiveProgress();
       }
 
       // Viewer behaviours
       function openViewer() { if (!images.length) return; viewerOverlay.classList.remove('viewer-ui-hidden'); viewerOverlay.style.display = 'flex'; viewerOverlay.setAttribute('aria-hidden', 'false'); renderViewer(); }
       function closeViewer() { viewerOverlay.classList.remove('viewer-ui-hidden'); viewerOverlay.style.display = 'none'; viewerOverlay.setAttribute('aria-hidden', 'true'); try { viewerToggle.checked = false; } catch (e) { }; closeMenu(); }
-      function renderViewer() {
+      function renderViewer(saveProgress = true) {
         const spreadOn = spreadSwitch.checked;
         const panoOn = panoramaSwitch.checked;
 
@@ -1198,9 +1313,8 @@
         }
 
         // ページインジケーター更新
-        updatePageIndicator();
+        updatePageIndicator(saveProgress);
       }
-
 
       function next() {
         const spreadOn = spreadSwitch.checked;
@@ -1265,6 +1379,25 @@
       });
 
 
+      pageSlider.addEventListener('input', function () {
+        if (!images.length) return;
+        pageSliderInteracting = true;
+        const selectedIndex = Math.max(0, Math.min(images.length - 1, Number(pageSlider.value) || 0));
+        if (panoramaSwitch.checked) {
+          idx = selectedIndex;
+          updatePageIndicator(false);
+          // スライダーの動きに合わせてページを即時移動する
+          scrollToPanoramaIndex(idx, 'auto');
+        } else {
+          idx = spreadSwitch.checked ? getSpreadPairStart(selectedIndex) : selectedIndex;
+          renderViewer(false);
+        }
+      });
+      pageSlider.addEventListener('change', function () {
+        pageSliderInteracting = false;
+        pageSlider.value = String(images.length ? Math.max(0, Math.min(images.length - 1, idx)) : 0);
+        saveArchiveProgress();
+      });
       // keyboard
       document.addEventListener('keydown', function (e) {
         if (viewerOverlay.getAttribute('aria-hidden') === 'true') return;
