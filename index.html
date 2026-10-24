@@ -245,8 +245,8 @@
 
     #viewerInner {
       width: 100vw;
-      height: calc(100vh - 120px);
-      margin: 60px 0;
+      height: 100vh;
+      margin: 0;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -301,6 +301,10 @@
       justify-content: center;
       gap: 10px;
       z-index: 10000;
+    }
+
+    #viewerOverlay.viewer-ui-hidden .viewerControls {
+      display: none;
     }
 
     .viewerBtn {
@@ -415,8 +419,8 @@
     #panoramaWrapper {
       display: none;
       width: 100vw;
-      height: calc(100vh - 120px);
-      margin: 60px 0;
+      height: 100vh;
+      margin: 0;
       overflow-x: auto;
       overflow-y: hidden;
       white-space: nowrap;
@@ -691,28 +695,36 @@
         }, 80);
       }, { passive: true });
 
-      // --- 画像表示エリアクリックによる進む／戻る制御 ---
+      // --- 画像表示エリアの三分割タップ制御 ---
       const viewerInner = document.getElementById('viewerInner');
       viewerInner.addEventListener('click', function (e) {
         // メニューなど他要素クリックは無視
         if (e.target !== viewerInner && e.target.tagName !== 'IMG') return;
 
-        const rect = viewerInner.getBoundingClientRect();
+        const rect = viewerOverlay.getBoundingClientRect();
         const x = e.clientX - rect.left;
-        const width = rect.width;
+        const third = rect.width / 3;
 
-        const leftZone = width / 2;
-        const rightZone = width - width / 2;
+        // 中央領域をタップするとビューアの操作UIを切り替える
+        if (x >= third && x <= third * 2) {
+          if (viewerOverlay.classList.contains('viewer-ui-hidden')) {
+            viewerOverlay.classList.remove('viewer-ui-hidden');
+          } else {
+            closeMenu();
+            viewerOverlay.classList.add('viewer-ui-hidden');
+          }
+          return;
+        }
 
-        // 左右どちらをクリックしたかで動作を決定
+        // 左右どちらをタップしたかで動作を決定
         if (dirRight.checked) {
-          // 右開き → 左クリックで進む、右クリックで戻る
-          if (x < leftZone) next();
-          else if (x > rightZone) prev();
+          // 右開き → 左領域で進む、右領域で戻る
+          if (x < third) next();
+          else prev();
         } else {
-          // 左開き → 右クリックで進む、左クリックで戻る
-          if (x > rightZone) next();
-          else if (x < leftZone) prev();
+          // 左開き → 右領域で進む、左領域で戻る
+          if (x > third * 2) next();
+          else prev();
         }
       });
 
@@ -1001,8 +1013,8 @@
       }
 
       // Viewer behaviours
-      function openViewer() { if (!images.length) return; viewerOverlay.style.display = 'flex'; viewerOverlay.setAttribute('aria-hidden', 'false'); renderViewer(); }
-      function closeViewer() { viewerOverlay.style.display = 'none'; viewerOverlay.setAttribute('aria-hidden', 'true'); try { viewerToggle.checked = false; } catch (e) { }; closeMenu(); }
+      function openViewer() { if (!images.length) return; viewerOverlay.classList.remove('viewer-ui-hidden'); viewerOverlay.style.display = 'flex'; viewerOverlay.setAttribute('aria-hidden', 'false'); renderViewer(); }
+      function closeViewer() { viewerOverlay.classList.remove('viewer-ui-hidden'); viewerOverlay.style.display = 'none'; viewerOverlay.setAttribute('aria-hidden', 'true'); try { viewerToggle.checked = false; } catch (e) { }; closeMenu(); }
       function renderViewer() {
         const spreadOn = spreadSwitch.checked;
         const panoOn = panoramaSwitch.checked;
@@ -1277,7 +1289,17 @@
       dirLeft.addEventListener('change', function () { renderViewer(); });
 
       // utility
-      function updateImagesFromContainer() { const imgs = Array.from(document.querySelectorAll('#imageContainer img')); images = imgs.map(i => i.src); if (idx >= images.length) idx = Math.max(0, images.length - 1); if (viewerToggle.checked && images.length) openViewer(); }
+      function updateImagesFromContainer() {
+        const imgs = Array.from(document.querySelectorAll('#imageContainer img'));
+        images = imgs.map(i => i.src);
+        if (idx >= images.length) idx = Math.max(0, images.length - 1);
+        ensurePanoramaDOM();
+
+        if (viewerToggle.checked && images.length) {
+          if (viewerOverlay.getAttribute('aria-hidden') === 'true') openViewer();
+          else renderViewer();
+        }
+      }
       window.updateImagesFromContainer = updateImagesFromContainer;
 
     });
