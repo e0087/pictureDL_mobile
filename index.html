@@ -922,10 +922,13 @@
       panoramaWrapper.id = 'panoramaWrapper';
       document.getElementById('viewerInner').appendChild(panoramaWrapper);
       let isProgrammaticScroll = false;
+      let isPanoramaResizing = false;
+      let panoramaResizeRestoreIndex = null;
+      let panoramaResizeTimeout = null;
       let panoramaScrollTimeout = null;
       let panoramaProgrammaticUnlockTimer = null;
       panoramaWrapper.addEventListener('scroll', function () {
-        if (!panoramaSwitch.checked) return;
+        if (!panoramaSwitch.checked || isPanoramaResizing) return;
         if (isProgrammaticScroll) {
           if (panoramaProgrammaticUnlockTimer) clearTimeout(panoramaProgrammaticUnlockTimer);
           panoramaProgrammaticUnlockTimer = setTimeout(function () {
@@ -936,7 +939,7 @@
         }
         if (panoramaScrollTimeout) clearTimeout(panoramaScrollTimeout);
         panoramaScrollTimeout = setTimeout(function () {
-          if (isProgrammaticScroll) return;
+          if (isProgrammaticScroll || isPanoramaResizing) return;
           const imgs = Array.from(panoramaWrapper.querySelectorAll('img'));
           if (!imgs.length) return;
           const wrapperRect = panoramaWrapper.getBoundingClientRect();
@@ -995,6 +998,35 @@
       let images = []; // list of image URLs
       let idx = 0;
       let pageSliderInteracting = false;
+
+      function preservePanoramaPageDuringResize() {
+        if (!panoramaSwitch.checked || viewerOverlay.getAttribute('aria-hidden') === 'true') return;
+        if (panoramaResizeRestoreIndex === null) panoramaResizeRestoreIndex = idx;
+        isPanoramaResizing = true;
+        if (panoramaScrollTimeout) {
+          clearTimeout(panoramaScrollTimeout);
+          panoramaScrollTimeout = null;
+        }
+        if (panoramaResizeTimeout) clearTimeout(panoramaResizeTimeout);
+        panoramaResizeTimeout = setTimeout(function () {
+          const restoreIndex = panoramaResizeRestoreIndex;
+          panoramaResizeRestoreIndex = null;
+          panoramaResizeTimeout = null;
+          isPanoramaResizing = false;
+          if (restoreIndex === null || !panoramaSwitch.checked || !images.length) return;
+
+          idx = Math.max(0, Math.min(images.length - 1, restoreIndex));
+          updatePageIndicator();
+          requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+              scrollToPanoramaIndex(idx, 'auto');
+            });
+          });
+        }, 250);
+      }
+
+      window.addEventListener('resize', preservePanoramaPageDuringResize);
+      window.addEventListener('orientationchange', preservePanoramaPageDuringResize);
 
       function setProgress(v) {
         progressCircle.style.setProperty('--progress', v);
