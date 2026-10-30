@@ -748,6 +748,19 @@
         }
       }
 
+      function isSameArchiveName(nameA, nameB) {
+        return typeof nameA === 'string' && typeof nameB === 'string'
+          && nameA.normalize('NFKC').toLocaleLowerCase('ja-JP')
+            === nameB.normalize('NFKC').toLocaleLowerCase('ja-JP');
+      }
+
+      function hasSavedMidProgress(progress) {
+        const page = Number(progress && progress.page);
+        const maxPage = Number(progress && progress.maxPage);
+        return Number.isInteger(page) && Number.isInteger(maxPage)
+          && page > 1 && page < maxPage;
+      }
+
       function saveArchiveProgress() {
         if (!activeArchiveProgressKey || !images.length) return;
 
@@ -800,9 +813,8 @@
         activeArchiveProgressName = archiveName;
         activeArchivePageNames = entries.map(entry => entry.name);
         const savedProgress = readArchiveProgress(activeArchiveProgressKey);
-        const isSameArchiveFile = savedProgress && savedProgress.archiveName
-          && savedProgress.archiveName.normalize('NFKC').toLocaleLowerCase('ja-JP')
-            === archiveName.normalize('NFKC').toLocaleLowerCase('ja-JP');
+        const isSameArchiveFile = savedProgress
+          && isSameArchiveName(savedProgress.archiveName, archiveName);
         const savedPageNameIndex = isSameArchiveFile && savedProgress.pageName
           ? activeArchivePageNames.indexOf(savedProgress.pageName)
           : -1;
@@ -862,6 +874,17 @@
         if (!file) {
           document.getElementById('errorContainer').textContent = 'ZIP または RAR ファイルを選択してください。';
           return;
+        }
+
+        const isSupportedArchive = /\.(zip|rar)$/i.test(file.name);
+        if (isSupportedArchive) {
+          const savedProgress = readArchiveProgress(getArchiveProgressKey(file.name));
+          const isDifferentVolume = savedProgress
+            && !isSameArchiveName(savedProgress.archiveName, file.name);
+          if (isDifferentVolume && hasSavedMidProgress(savedProgress)) {
+            const message = `${savedProgress.archiveName} を ${savedProgress.page}/${savedProgress.maxPage} ページまで読んだ記録があります。\n別巻「${file.name}」を開きますか？`;
+            if (!window.confirm(message)) return;
+          }
         }
 
         openArchiveBtn.disabled = true;
