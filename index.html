@@ -32,6 +32,12 @@
       background: radial-gradient(ellipse at top, #1c2431 0%, var(--reader-bg) 68%);
     }
 
+    html.reader-scroll-space,
+    body.reader-scroll-space {
+      min-height: calc(100vh + 120px);
+      min-height: calc(100dvh + 120px);
+    }
+
     #archiveHome {
       min-height: 100vh;
       min-height: 100dvh;
@@ -338,6 +344,7 @@
     }
 
     .menuBtn { left: calc(12px + env(safe-area-inset-left)); }
+    .fullscreenBtn { right: calc(62px + env(safe-area-inset-right)); }
     .closeBtn { right: calc(12px + env(safe-area-inset-right)); }
 
     .PageIndicator {
@@ -530,6 +537,7 @@
     <div class="viewerControls">
       <button id="menuBtn" class="fixedBtn menuBtn">≡</button>
       <div id="pageIndicator" class="fixedBtn PageIndicator">1</div>
+      <button id="fullscreenBtn" class="fixedBtn fullscreenBtn" type="button" aria-label="全画面表示" title="全画面表示">⛶</button>
       <button id="closeBtn" class="fixedBtn closeBtn">✕</button>
       <div class="viewerNavButtons">
         <button class="viewerBtn" id="prevBtn" type="button">◀</button>
@@ -1226,8 +1234,55 @@
       }
 
       // Viewer behaviours
+      const fullscreenBtn = document.getElementById('fullscreenBtn');
+      let immersiveScrollMode = false;
+
+      function setImmersiveScrollMode(enabled) {
+        immersiveScrollMode = enabled;
+        document.documentElement.classList.toggle('reader-scroll-space', enabled);
+        document.body.classList.toggle('reader-scroll-space', enabled);
+        fullscreenBtn.textContent = enabled ? '⤢' : '⛶';
+        fullscreenBtn.setAttribute('aria-label', enabled ? '全画面表示を解除' : '全画面表示');
+        fullscreenBtn.title = enabled ? '全画面表示を解除' : '全画面表示';
+        if (enabled) window.scrollTo(0, 1);
+        else window.scrollTo(0, 0);
+      }
+
+      async function toggleReaderFullscreen() {
+        const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement;
+        if (fullscreenElement) {
+          if (document.exitFullscreen) await document.exitFullscreen();
+          else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+          return;
+        }
+
+        if (immersiveScrollMode) {
+          setImmersiveScrollMode(false);
+          return;
+        }
+
+        const requestFullscreen = viewerOverlay.requestFullscreen || viewerOverlay.webkitRequestFullscreen;
+        if (requestFullscreen) {
+          try {
+            await requestFullscreen.call(viewerOverlay);
+            return;
+          } catch (error) {
+            console.info('ネイティブ全画面表示を利用できないため、スクロールによる表示に切り替えます。', error);
+          }
+        }
+        setImmersiveScrollMode(true);
+      }
+
       function openViewer() { if (!images.length) return; viewerOverlay.classList.remove('viewer-ui-hidden'); viewerOverlay.style.display = 'flex'; viewerOverlay.setAttribute('aria-hidden', 'false'); renderViewer(); }
-      function closeViewer() { viewerOverlay.classList.remove('viewer-ui-hidden'); viewerOverlay.style.display = 'none'; viewerOverlay.setAttribute('aria-hidden', 'true'); closeMenu(); }
+      function closeViewer() {
+        viewerOverlay.classList.remove('viewer-ui-hidden');
+        viewerOverlay.style.display = 'none';
+        viewerOverlay.setAttribute('aria-hidden', 'true');
+        if (immersiveScrollMode) setImmersiveScrollMode(false);
+        if ((document.fullscreenElement === viewerOverlay || document.webkitFullscreenElement === viewerOverlay) && document.exitFullscreen) document.exitFullscreen().catch(function () {});
+        else if (document.webkitFullscreenElement === viewerOverlay && document.webkitExitFullscreen) document.webkitExitFullscreen();
+        closeMenu();
+      }
       function renderViewer(saveProgress = true) {
         const spreadOn = spreadSwitch.checked;
         const panoOn = panoramaSwitch.checked;
@@ -1366,6 +1421,15 @@
       document.getElementById('nextBtn').addEventListener('click', function (e) { e.stopPropagation(); next(); });
       document.getElementById('prevBtn').addEventListener('click', function (e) { e.stopPropagation(); prev(); });
       document.getElementById('closeBtn').addEventListener('click', function (e) { e.stopPropagation(); closeViewer(); });
+      fullscreenBtn.addEventListener('click', function (e) { e.stopPropagation(); toggleReaderFullscreen().catch(function (error) { console.warn('全画面表示を切り替えられませんでした。', error); }); });
+      function updateFullscreenButton() {
+        const active = immersiveScrollMode || document.fullscreenElement === viewerOverlay || document.webkitFullscreenElement === viewerOverlay;
+        fullscreenBtn.textContent = active ? '⤢' : '⛶';
+        fullscreenBtn.setAttribute('aria-label', active ? '全画面表示を解除' : '全画面表示');
+        fullscreenBtn.title = active ? '全画面表示を解除' : '全画面表示';
+      }
+      document.addEventListener('fullscreenchange', updateFullscreenButton);
+      document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
       document.getElementById('firstBtn').addEventListener('click', function (e) {
         e.stopPropagation();
         if (panoramaSwitch.checked) {
