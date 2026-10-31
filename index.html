@@ -3,235 +3,177 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>画像表示ページ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>コミックリーダー</title>
   <style>
-    body {
-      font-family: 'Arial', sans-serif;
-      text-align: center;
-      margin: 20px;
-      background-color: #f0f0f0;
-      color: #333;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+    :root {
+      color-scheme: dark;
+      --reader-bg: #0b0d12;
+      --reader-panel: #171b24;
+      --reader-border: #303744;
+      --reader-text: #f3f5f8;
+      --reader-muted: #aab2c0;
+      --reader-accent: #4da3ff;
     }
 
-    h1 {
-      margin-bottom: 20px;
-      color: #555;
-    }
+    * { box-sizing: border-box; }
 
-    .hidden-link {
-      position: absolute;
-      right: 0;
-      top: 0;
-      margin: 20px;
-      text-decoration: none;
-      color: transparent;
-    }
-
-    .imageContainer {
-      position: relative;
-      margin-top: 20px;
-      display: inline-block;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      overflow: hidden;
-      background-color: #fff;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    img {
-      max-width: 100%;
-      height: auto;
-      display: block;
-    }
-
-    .imageNumber {
-      position: absolute;
-      top: 0;
-      left: 0;
-      background-color: rgba(0, 0, 0, 0.7);
-      color: #fff;
-      padding: 5px;
-      border-bottom-right-radius: 10px;
-    }
-
-    .input-group,
-    .button-group {
+    html, body {
       width: 100%;
-      max-width: 730px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 10px 0;
+      min-height: 100%;
+      margin: 0;
     }
 
-    .input-group input,
-    .button-group input {
-      flex: 1;
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--reader-text);
+      background: radial-gradient(ellipse at top, #1c2431 0%, var(--reader-bg) 68%);
+    }
+
+    #archiveHome {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .archiveCard {
+      width: min(100%, 460px);
+      padding: 30px 26px;
+      border: 1px solid var(--reader-border);
+      border-radius: 20px;
+      background: rgba(23, 27, 36, 0.96);
+      box-shadow: 0 22px 70px rgba(0, 0, 0, 0.38);
+    }
+
+    .archiveEyebrow {
+      margin: 0 0 8px;
+      color: var(--reader-accent);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+    }
+
+    .archiveCard h1 {
+      margin: 0;
+      font-size: clamp(26px, 7vw, 34px);
+      letter-spacing: 0.02em;
+    }
+
+    .archiveDescription {
+      margin: 12px 0 26px;
+      color: var(--reader-muted);
+      line-height: 1.65;
+    }
+
+    .archiveLabel {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    #archiveFileInput {
+      display: block;
+      width: 100%;
+      min-height: 48px;
       padding: 10px;
-      margin-right: 10px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      border: 1px solid #424b5b;
+      border-radius: 10px;
+      color: var(--reader-text);
+      background: #10141b;
     }
 
-    .input-group button,
-    .button-group button {
-      flex: 1;
-      max-width: 120px;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 5px;
+    #openArchiveBtn, #loadUrlComicBtn {
+      width: 100%;
+      min-height: 50px;
+      margin-top: 14px;
+      border: 0;
+      border-radius: 10px;
+      color: #061321;
+      background: var(--reader-accent);
+      font-size: 16px;
+      font-weight: 700;
       cursor: pointer;
-      transition: background-color 0.3s;
-      background-color: #007bff;
-      color: white;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    .input-group button:hover,
-    .button-group button:hover {
-      background-color: #0056b3;
+    #openArchiveBtn:disabled, #loadUrlComicBtn:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+
+    .sourceTabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 24px;
+      padding: 5px;
+      border: 1px solid var(--reader-border);
+      border-radius: 12px;
+      background: #10141b;
+    }
+
+    .sourceTab {
+      min-height: 42px;
+      border: 0;
+      border-radius: 8px;
+      color: var(--reader-muted);
+      background: transparent;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .sourceTab[aria-selected="true"] {
+      color: var(--reader-text);
+      background: #303a49;
+    }
+
+    .sourcePanel[hidden] { display: none; }
+
+    .sourcePanel label {
+      display: block;
+      margin: 14px 0 8px;
+      text-align: left;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .sourcePanel input[type="url"],
+    .sourcePanel input[type="text"] {
+      display: block;
+      width: 100%;
+      min-height: 48px;
+      padding: 12px;
+      border: 1px solid #424b5b;
+      border-radius: 10px;
+      color: var(--reader-text);
+      background: #10141b;
+      font: inherit;
+    }
+
+    .sourceHint {
+      margin: 8px 0 0;
+      color: var(--reader-muted);
+      font-size: 12px;
+      line-height: 1.5;
+      text-align: left;
     }
 
     #errorContainer {
-      color: red;
-      margin-bottom: 10px;
+      min-height: 1.5em;
+      margin-top: 16px;
+      color: #ff9c9c;
+      font-size: 14px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
     }
 
-    #usageBox {
-      width: 100%;
-      max-width: 700px;
-      border: 1px solid #ddd;
-      background-color: #fff;
-      padding: 15px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      text-align: left;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    ol {
-      margin: 0;
-      padding-left: 20px;
-    }
-
-    summary {
-      font-size: 120%;
-      cursor: pointer;
-    }
-
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 50px;
-      height: 26px;
-      margin-left: 8px;
-      vertical-align: middle;
-    }
-
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      inset: 0;
-      background-color: #ccc;
-      border-radius: 13px;
-      transition: .4s;
-    }
-
-    .slider::before {
-      position: absolute;
-      content: "";
-      height: 22px;
-      width: 22px;
-      left: 2px;
-      bottom: 2px;
-      background-color: white;
-      border-radius: 50%;
-      transition: .4s;
-    }
-
-    input:checked+.slider {
-      background-color: #007bff;
-    }
-
-    input:checked+.slider::before {
-      transform: translateX(24px);
-    }
-
-    #loader {
-      display: none;
-      position: fixed;
-      bottom: 10px;
-      right: 10px;
-      width: 35px;
-      height: 35px;
-      z-index: 10001;
-    }
-
-    .progress-circle {
-      position: fixed;
-      bottom: 10px;
-      right: 10px;
-      width: 55px;
-      height: 55px;
-      border-radius: 50%;
-      background: conic-gradient(#3498db 0% calc(var(--progress) * 1%), #ddd calc(var(--progress) * 1%) 100%);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 10px;
-      font-weight: bold;
-      color: #3498db;
-    }
-
-    .progress-circle::before {
-      content: "";
-      position: absolute;
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      background: #fff;
-    }
-
-    .progress-text {
-      position: relative;
-      z-index: 2;
-      font-size: 10px;
-    }
-
-    .fixed-loder {
-      display: none;
-      position: fixed;
-      border: 8px solid #ddd;
-      border-radius: 50%;
-      border-top: 8px solid #3498db;
-      width: 35px;
-      height: 35px;
-      bottom: 10px;
-      right: 10px;
-      animation: spin-right 2s linear infinite;
-    }
-
-    @keyframes spin-right {
-      0% {
-        transform: rotate(0deg);
-      }
-
-      100% {
-        transform: rotate(360deg);
-      }
-    }
-
-    /* Viewer overlay */
     #viewerOverlay {
       position: fixed;
       inset: 0;
@@ -246,19 +188,19 @@
     #viewerInner {
       width: 100vw;
       height: 100vh;
+      height: 100dvh;
       margin: 0;
       display: flex;
       align-items: center;
       justify-content: center;
       background: #000;
-      box-sizing: border-box;
       overflow: hidden;
     }
 
     #singleImage {
+      display: block;
       width: 100%;
-      height: auto;
-      max-height: 100%;
+      height: 100%;
       object-fit: contain;
     }
 
@@ -278,30 +220,26 @@
     }
 
     #spreadWrapper img {
-      height: auto;
       width: auto;
-      object-fit: contain;
+      height: auto;
+      max-width: 100%;
       max-height: 100%;
+      object-fit: contain;
     }
 
-    #spreadLeft {
-      justify-content: flex-end;
-    }
-
-    #spreadRight {
-      justify-content: flex-start;
-    }
+    #spreadLeft { justify-content: flex-end; }
+    #spreadRight { justify-content: flex-start; }
 
     .viewerControls {
       position: fixed;
-      width: 100%;
       left: 0;
-      bottom: 10px;
+      bottom: calc(10px + env(safe-area-inset-bottom));
+      z-index: 10000;
       display: flex;
+      width: 100%;
       flex-direction: column;
       align-items: center;
       gap: 8px;
-      z-index: 10000;
     }
 
     .viewerNavButtons {
@@ -335,7 +273,7 @@
       margin-top: -6px;
       border: 0;
       border-radius: 50%;
-      background: #4da3ff;
+      background: var(--reader-accent);
       -webkit-appearance: none;
     }
 
@@ -349,197 +287,232 @@
       height: 16px;
       border: 0;
       border-radius: 50%;
-      background: #4da3ff;
+      background: var(--reader-accent);
     }
 
-    #viewerOverlay.viewer-ui-hidden .viewerControls {
-      display: none;
-    }
-
-    .viewerBtn {
+    #readerLoadingStatus {
+      position: fixed;
+      right: calc(12px + env(safe-area-inset-right));
+      bottom: calc(44px + env(safe-area-inset-bottom));
+      z-index: 10002;
+      display: flex;
+      min-width: 40px;
+      min-height: 40px;
+      max-width: calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right));
+      align-items: center;
+      justify-content: center;
       padding: 10px 16px;
-      border: 1px solid #555;
-      background: rgba(20, 20, 20, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 8px;
       color: #fff;
-      border-radius: 6px;
+      background: rgba(25, 29, 37, 0.9);
+      font-size: 16px;
+      line-height: 18px;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    #readerLoadingStatus[hidden],
+    #viewerOverlay.viewer-ui-hidden #readerLoadingStatus { display: none; }
+
+    #viewerOverlay.viewer-ui-hidden .viewerControls { display: none; }
+
+    .viewerBtn, .fixedBtn {
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 8px;
+      color: #fff;
+      background: rgba(25, 29, 37, 0.9);
       font-size: 16px;
       cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    .viewerBtn:hover {
-      background: rgba(40, 40, 40, 1);
-    }
+    .viewerBtn { padding: 10px 16px; }
 
     .fixedBtn {
       position: fixed;
-      top: 12px;
-      padding: 10px 16px;
-      border: 1px solid #ccc;
-      background: rgba(30, 30, 30, 0.95);
-      color: #fff;
-      border-radius: 6px;
-      font-size: 16px;
-      cursor: pointer;
+      top: calc(12px + env(safe-area-inset-top));
       z-index: 10001;
+      padding: 10px 14px;
+      background: rgba(25, 29, 37, 0.78);
     }
 
-    .closeBtn {
-      right: 12px;
+    .menuBtn { left: calc(12px + env(safe-area-inset-left)); }
+    .closeBtn { right: calc(12px + env(safe-area-inset-right)); }
+
+    .PageIndicator {
+      left: 50%;
+      transform: translateX(-50%);
+      pointer-events: none;
     }
 
-    .menuBtn {
-      left: 12px;
-    }
-
-    .fixedBtn:hover {
-      background: rgba(255, 255, 255, 0.12);
-    }
-
-    .fixedPageIndicator {
-      background: rgba(0, 0, 0, 0.9);
-      padding: 6px 12px;
-      border-radius: 6px;
-    }
-
-    /* Menu panel */
     #menuPanel {
       position: fixed;
       left: 50%;
       top: 50%;
       transform: translate(-50%, -50%);
-      min-width: 260px;
-      backdrop-filter: blur(10px) brightness(80%);
+      width: min(360px, calc(100vw - 32px));
+      padding: 18px;
+      border: 1px solid #414958;
+      border-radius: 14px;
       color: #fff;
-      padding: 16px;
-      border-radius: 10px;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+      background: rgba(24, 28, 36, 0.97);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.65);
       display: none;
       z-index: 11000;
     }
 
-    #menuPanel h3 {
-      margin: 0 0 10px 0;
-      font-size: 16px;
-    }
+    #menuPanel h3 { margin: 0 0 14px; font-size: 17px; }
 
     .menuRow {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin: 8px 0;
+      margin: 12px 0;
       gap: 8px;
+    }
+
+
+    .menuField {
+      margin: 14px 0;
+      text-align: left;
+    }
+
+    .menuField label {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .menuField input {
+      width: 100%;
+      min-height: 40px;
+      padding: 9px 10px;
+      border: 1px solid #465061;
+      border-radius: 8px;
+      color: var(--reader-text);
+      background: #10141b;
+      font: inherit;
     }
 
     .menuFooter {
       display: flex;
       justify-content: flex-end;
-      gap: 8px;
-      margin-top: 10px;
+      margin-top: 18px;
     }
+
+    .menuFooter .viewerBtn { min-width: 92px; }
 
     .chip {
-      padding: 6px 10px;
-      border-radius: 6px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 7px 9px;
+      border: 1px solid #465061;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
       font-size: 13px;
+      white-space: nowrap;
     }
 
-    @media (max-width:600px) {
-      .viewerControls {
-        bottom: 12px;
-      }
-
-      #menuPanel {
-        min-width: 300px;
-      }
-
-      .spreadSlot {
-        min-height: 40vh;
-      }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 26px;
+      margin-left: 8px;
+      vertical-align: middle;
+      flex: 0 0 auto;
     }
+
+    .switch input { opacity: 0; width: 0; height: 0; }
+
+    .slider {
+      position: absolute;
+      inset: 0;
+      border-radius: 13px;
+      background-color: #555e6b;
+      cursor: pointer;
+      transition: background-color .2s;
+    }
+
+    .slider::before {
+      position: absolute;
+      left: 2px;
+      bottom: 2px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #fff;
+      content: "";
+      transition: transform .2s;
+    }
+
+    .switch input:checked + .slider { background-color: var(--reader-accent); }
+    .switch input:checked + .slider::before { transform: translateX(24px); }
 
     #panoramaWrapper {
       display: none;
       width: 100vw;
       height: 100vh;
+      height: 100dvh;
       margin: 0;
       overflow-x: auto;
       overflow-y: hidden;
       white-space: nowrap;
       background: #000;
+      scrollbar-width: none;
     }
+
+    #panoramaWrapper::-webkit-scrollbar { display: none; }
 
     #panoramaWrapper img {
       display: inline-block;
-      height: 100%;
       width: auto;
-      /* ← 常に高さ基準（モバイルでも変えない） */
+      height: 100%;
       object-fit: contain;
       vertical-align: middle;
       margin: 0;
       padding: 0;
     }
 
-    /* モバイル縦画面（600px以下）は横幅優先に変更 */
     @media (max-aspect-ratio: 3/4) {
+      #spreadWrapper img { width: auto; height: 100%; }
+    }
 
-      /* モバイルでは見開きのみ高さ基準に変更する */
-      #spreadWrapper img {
-        width: auto;
-        height: 100%;
-      }
-
-      /* シングルページは従来通り高さ優先 */
-      #singleImage {
-        width: auto;
-        height: 100%;
-      }
+    @media (max-width: 600px) {
+      #archiveHome { padding: 18px; }
+      .archiveCard { padding: 26px 20px; }
+      .viewerControls { bottom: 12px; }
+      #menuPanel { width: min(360px, calc(100vw - 24px)); }
     }
   </style>
 </head>
 
 <body>
-  <h1>画像表示ページ</h1>
-  <a href="https://nhentai.net/" target="_blank" class="hidden-link">Hidden Link</a>
-
-  <div id="usageBox">
-    <details>
-      <summary><strong>使用方法</strong></summary>
-      <ol>
-        <li>対象画像サイトの1ページ目の画像を右クリックし、「画像のリンクをコピー」を押下。</li>
-        <li>「画像URL入力フォーム」にペースト。</li>
-        <li>「画像表示」ボタンを押下。</li>
-        <li>「一括保存」ボタンを押下し、すべての画像が保存されます。</li>
-        <li>手元の ZIP / RAR を開く場合は、書庫ファイルを選択して「書庫を開く」を押下。</li>
-      </ol>
-      <div style="margin-top:10px;"><strong>▼モード切替</strong></div>
-      <label class="switch"><input type="checkbox" id="linkToggle"><span class="slider"></span></label> リンク表示モード
-      <br />
-      <label class="switch"><input type="checkbox" id="viewerToggle"><span class="slider"></span></label>
-      コミックビュアーモード
-    </details>
-  </div>
-
-  <div class="input-group">
-    <input type="search" id="textInput" placeholder="画像URLを入力">
-    <button onclick="processDisplay()">画像表示</button>
-  </div>
-  <div class="input-group">
-    <input type="search" id="zipFileNameInput" placeholder="zipファイル名(オプション)">
-    <button onclick="downloadImages()">一括保存</button>
-  </div>
-  <div class="input-group">
-    <input type="file" id="archiveFileInput" accept=".zip,.rar,application/zip,application/vnd.rar">
-    <button id="openArchiveBtn" type="button">書庫を開く</button>
-  </div>
-
-  <div id="errorContainer"></div>
-  <div id="loader">
-    <div class="progress-circle" data-progress="0"><span class="progress-text">0%</span></div>
-  </div>
-  <div class="fixed-loder" style="z-index:10000"></div>
-  <div id="imageContainer"></div>
+  <main id="archiveHome">
+    <section class="archiveCard" aria-labelledby="appTitle">
+      <p class="archiveEyebrow">COMIC READER</p>
+      <h1 id="appTitle">コミックリーダー</h1>
+      <p class="archiveDescription">読み込み方法を選んで、コミックを開きます。</p>
+      <div class="sourceTabs" role="tablist" aria-label="読み込み方法">
+        <button class="sourceTab" id="archiveModeTab" type="button" role="tab" aria-selected="true" aria-controls="archiveSourcePanel">書庫ファイル</button>
+        <button class="sourceTab" id="urlModeTab" type="button" role="tab" aria-selected="false" aria-controls="urlSourcePanel">画像URL</button>
+      </div>
+      <section class="sourcePanel" id="archiveSourcePanel" role="tabpanel" aria-labelledby="archiveModeTab">
+        <label class="archiveLabel" for="archiveFileInput">ZIP / RAR ファイル</label>
+        <input type="file" id="archiveFileInput" accept=".zip,.rar,application/zip,application/vnd.rar">
+        <button id="openArchiveBtn" type="button">読み込んで読む</button>
+      </section>
+      <section class="sourcePanel" id="urlSourcePanel" role="tabpanel" aria-labelledby="urlModeTab" hidden>
+        <label for="textInput">1枚目の画像URL または画像ページURL</label>
+        <input type="url" id="textInput" inputmode="url" placeholder="https://example.com/page001.jpg" autocomplete="url">
+        <p class="sourceHint">画像URLに連番が含まれる場合、後続ページを探して読み込みます。</p>
+        <label for="zipFileNameInput">タイトル / ZIPファイル名（任意）</label>
+        <input type="text" id="zipFileNameInput" placeholder="作品名" autocomplete="off">
+        <button id="loadUrlComicBtn" type="button">読み込んで読む</button>
+      </section>
+      <div id="errorContainer" role="status" aria-live="polite"></div>
+    </section>
+  </main>
 
   <!-- Viewer overlay -->
   <div id="viewerOverlay" aria-hidden="true">
@@ -553,6 +526,7 @@
       </div>
     </div>
 
+    <div id="readerLoadingStatus" aria-live="polite" hidden></div>
     <div class="viewerControls">
       <button id="menuBtn" class="fixedBtn menuBtn">≡</button>
       <div id="pageIndicator" class="fixedBtn PageIndicator">1</div>
@@ -568,7 +542,7 @@
 
   <!-- Menu panel (modal) -->
   <div id="menuPanel" role="dialog" aria-modal="true" aria-hidden="true">
-    <h3>Viewerメニュー</h3>
+    <h3>リーダー設定</h3>
     <div class="menuRow">
       <div>見開きモード</div>
       <label class="switch"><input type="checkbox" id="spreadSwitch"><span class="slider"></span></label>
@@ -589,10 +563,13 @@
       <div>ページずらし</div>
       <label class="switch"><input type="checkbox" id="shiftSwitch"><span class="slider"></span></label>
     </div>
-    <div class="menuRow" id="menuExtra"></div>
+    <div class="menuField" id="urlZipNameSetting" hidden>
+      <label for="readerZipFileNameInput">タイトル / ZIPファイル名（任意）</label>
+      <input type="text" id="readerZipFileNameInput" placeholder="作品名" autocomplete="off">
+    </div>
     <div class="menuFooter">
-      <button class="viewerBtn" id="menuDownloadBtn" type="button">ダウンロード</button>
-      <button class="viewerBtn" id="menuCloseBtn">閉じる</button>
+      <button class="viewerBtn" id="menuDownloadBtn" type="button" style="display:none">ZIP保存</button>
+      <button class="viewerBtn" id="menuCloseBtn" type="button">閉じる</button>
     </div>
   </div>
 
@@ -624,110 +601,98 @@
   </script>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      const params = new URLSearchParams(window.location.search);
-      const prefillUrl = params.get('url');
-      if (prefillUrl) {
-        const input = document.getElementById('textInput');
-        input.value = decodeURIComponent(prefillUrl);
-      }
-      const extensions = ['.jpg', '.png', '.jpeg', '.webp'];
-      
-      // URLのパスが画像ファイルかどうかを判定する
-      function isDirectImageUrl(value) {
-        try {
-          const url = new URL(value);
-          return /\.(jpe?g|png|webp)$/i.test(url.pathname);
-        } catch {
-          return false;
-        }
-      }
-
-      // ページURLから画像URLを抽出する
-      async function extractImageUrlFromPage(pageUrl) {
-        let url;
-
-        try {
-          url = new URL(pageUrl);
-        } catch {
-          throw new Error('正しいURLを入力してください。');
-        }
-
-        if (url.protocol !== 'https:' && url.protocol !== 'http:') {
-          throw new Error('http または https のURLを入力してください。');
-        }
-
-        let response;
-
-        try {
-          response = await fetch(url.href);
-        } catch (error) {
-          throw new Error(
-            'ページ取得時の通信エラー。CORS、拡張機能、通信制限を確認してください。' +
-            ' 詳細: ' + error.message
-          );
-        }
-        
-        if (!response.ok) {
-          throw new Error(
-            `ページ取得失敗: HTTP ${response.status}`
-          );
-        }
-
-        if (!response.ok) {
-          throw new Error(
-            `ページの取得に失敗しました (HTTP ${response.status})`
-          );
-        }
-
-        const html = await response.text();
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-
-        // 指定された要素の中から画像を探す
-        const container = doc.querySelector('section#image-container');
-
-        if (!container) {
-          throw new Error(
-            'section#image-container が見つかりません。'
-          );
-        }
-
-        const candidates = Array.from(
-          container.querySelectorAll('img[src], img[data-src]')
-        );
-
-        // 対応する画像形式のURLを持つ最初の画像を選ぶ
-        for (const img of candidates) {
-          const src =
-            img.getAttribute('src') ||
-            img.getAttribute('data-src');
-
-          if (!src) continue;
-
-          const imageUrl = new URL(src, url.href);
-
-          if (isDirectImageUrl(imageUrl.href)) {
-            return imageUrl.href;
-          }
-        }
-
-        throw new Error(
-          '対象要素内に jpg、jpeg、png、webp の画像が見つかりません。'
-        );
-      }
-
-      const progressCircle = document.querySelector('.progress-circle');
-      const progressText = document.querySelector('.progress-text');
-      const loader = document.getElementById('loader');
-      const fixedLoder = document.querySelector('.fixed-loder');
-
       // --- ローカルの ZIP / RAR から画像を読み込む ---
       const archiveFileInput = document.getElementById('archiveFileInput');
       const openArchiveBtn = document.getElementById('openArchiveBtn');
+      const urlInput = document.getElementById('textInput');
+      const urlTitleInput = document.getElementById('zipFileNameInput');
+      const readerZipNameSetting = document.getElementById('urlZipNameSetting');
+      const readerZipNameInput = document.getElementById('readerZipFileNameInput');
+      const loadUrlComicBtn = document.getElementById('loadUrlComicBtn');
+      const menuDownloadBtn = document.getElementById('menuDownloadBtn');
+      const archiveModeTab = document.getElementById('archiveModeTab');
+      const urlModeTab = document.getElementById('urlModeTab');
+      const archiveSourcePanel = document.getElementById('archiveSourcePanel');
+      const urlSourcePanel = document.getElementById('urlSourcePanel');
+      let activeSource = 'archive';
+      let urlComicTitle = '';
+      let loadedComic = null;
+      let urlComicLoading = false;
+      let pendingUrlNext = 0;
       let archiveObjectUrls = [];
       let activeArchiveProgressKey = null;
       let activeArchiveProgressName = '';
       let activeArchivePageNames = [];
       const archiveProgressStoragePrefix = 'pictureDL:reading-position:v3:';
+
+      function setSourceMode(mode) {
+        activeSource = mode;
+        const showArchive = mode === 'archive';
+        archiveModeTab.setAttribute('aria-selected', String(showArchive));
+        urlModeTab.setAttribute('aria-selected', String(!showArchive));
+        archiveSourcePanel.hidden = !showArchive;
+        urlSourcePanel.hidden = showArchive;
+        document.getElementById('errorContainer').textContent = '';
+        updateSourceButtonLabels();
+      }
+
+      archiveModeTab.addEventListener('click', () => setSourceMode('archive'));
+      urlModeTab.addEventListener('click', () => setSourceMode('url'));
+
+      function setSourceLoading(isLoading) {
+        archiveModeTab.disabled = isLoading;
+        urlModeTab.disabled = isLoading;
+        openArchiveBtn.disabled = isLoading;
+        loadUrlComicBtn.disabled = isLoading;
+      }
+
+      function showReaderStatus(message) {
+        const status = document.getElementById('readerLoadingStatus');
+        status.textContent = message;
+        status.hidden = false;
+      }
+
+      function hideReaderStatus() {
+        const status = document.getElementById('readerLoadingStatus');
+        status.hidden = true;
+      }
+
+      function isSameLoadedArchive(file) {
+        return loadedComic && loadedComic.source === 'archive'
+          && isSameArchiveName(loadedComic.fileName, file.name)
+          && loadedComic.fileSize === file.size
+          && loadedComic.lastModified === file.lastModified;
+      }
+
+      function canReuseLoadedArchive(file) {
+        return loadedComic && loadedComic.source === 'archive' && images.length
+          && (!file || isSameLoadedArchive(file));
+      }
+
+      function updateSourceButtonLabels() {
+        const file = archiveFileInput.files && archiveFileInput.files[0];
+        openArchiveBtn.textContent = canReuseLoadedArchive(file) ? '読む' : '読み込んで読む';
+        const canReopenUrl = loadedComic && loadedComic.source === 'url'
+          && urlInput.value.trim() === loadedComic.inputUrl;
+        loadUrlComicBtn.textContent = canReopenUrl ? '読む' : '読み込んで読む';
+        if (urlComicLoading) loadUrlComicBtn.disabled = !canReopenUrl;
+      }
+
+      archiveFileInput.addEventListener('change', updateSourceButtonLabels);
+      urlInput.addEventListener('input', updateSourceButtonLabels);
+
+      function syncUrlTitleInputs(value) {
+        urlTitleInput.value = value;
+        readerZipNameInput.value = value;
+        if (activeSource === 'url') urlComicTitle = value.trim();
+      }
+
+      urlTitleInput.addEventListener('input', function () {
+        syncUrlTitleInputs(urlTitleInput.value);
+      });
+      readerZipNameInput.addEventListener('input', function () {
+        syncUrlTitleInputs(readerZipNameInput.value);
+      });
 
       function getArchiveProgressKey(fileName) {
         const normalizedName = fileName
@@ -805,10 +770,13 @@
         return ({ '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.gif': 'image/gif', '.bmp': 'image/bmp', '.avif': 'image/avif' })[ext] || 'application/octet-stream';
       }
 
-      function renderArchiveImages(entries, archiveName) {
+      function renderArchiveImages(entries, archiveFile) {
         if (!entries.length) throw new Error('書庫内に画像ファイルが見つかりませんでした。');
         entries.sort((a, b) => archiveFileCollator.compare(a.name, b.name));
+        const archiveName = archiveFile.name;
 
+        activeSource = 'archive';
+        menuDownloadBtn.style.display = 'none';
         activeArchiveProgressKey = getArchiveProgressKey(archiveName);
         activeArchiveProgressName = archiveName;
         activeArchivePageNames = entries.map(entry => entry.name);
@@ -828,27 +796,20 @@
           : 0;
 
         releaseArchiveObjectUrls();
-        const fragment = document.createDocumentFragment();
-        entries.forEach((entry, index) => {
+        images = entries.map(entry => {
           const url = URL.createObjectURL(new Blob([entry.data], { type: imageMimeType(entry.name) }));
           archiveObjectUrls.push(url);
-          const wrap = document.createElement('div');
-          wrap.className = 'imageContainer';
-          const img = document.createElement('img');
-          img.src = url;
-          img.alt = entry.name;
-          img.loading = 'lazy';
-          const number = document.createElement('div');
-          number.className = 'imageNumber';
-          number.textContent = String(index + 1);
-          wrap.appendChild(img);
-          wrap.appendChild(number);
-          fragment.appendChild(wrap);
+          return url;
         });
-
-        document.getElementById('imageContainer').replaceChildren(fragment);
+        loadedComic = {
+          source: 'archive',
+          fileName: archiveFile.name,
+          fileSize: archiveFile.size,
+          lastModified: archiveFile.lastModified
+        };
+        updateSourceButtonLabels();
         document.getElementById('errorContainer').textContent = `${archiveName} から画像を ${entries.length} 枚読み込みました。`;
-        updateImagesFromContainer();
+        openViewer();
       }
 
       async function openZipArchive(file) {
@@ -860,17 +821,190 @@
           name: entry.name,
           data: await entry.async('uint8array')
         })));
-        renderArchiveImages(entries, file.name);
+        renderArchiveImages(entries, file);
       }
 
       async function openRarArchive(file) {
         if (!window.extractRarImages) throw new Error('RAR読み込みライブラリを読み込めませんでした。ネットワーク接続を確認してください。');
         const entries = await window.extractRarImages(file);
-        renderArchiveImages(entries, file.name);
+        renderArchiveImages(entries, file);
       }
+
+      function isDirectImageUrl(value) {
+        try {
+          return /\.(jpe?g|png|webp|gif|bmp|avif)$/i.test(new URL(value).pathname);
+        } catch (error) {
+          return false;
+        }
+      }
+
+      async function extractImageUrlFromPage(pageUrl) {
+        let page;
+        try {
+          page = new URL(pageUrl);
+        } catch (error) {
+          throw new Error('正しい画像URLまたは画像ページURLを入力してください。');
+        }
+        if (page.protocol !== 'https:' && page.protocol !== 'http:') {
+          throw new Error('http または https のURLを入力してください。');
+        }
+
+        let response;
+        try {
+          response = await fetch(page.href);
+        } catch (error) {
+          throw new Error('ページを取得できませんでした。CORS設定や通信制限を確認してください。');
+        }
+        if (!response.ok) throw new Error(`ページ取得失敗: HTTP ${response.status}`);
+
+        const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+        const container = doc.querySelector('section#image-container');
+        if (!container) throw new Error('ページ内に画像一覧が見つかりません。');
+        const image = Array.from(container.querySelectorAll('img[src], img[data-src]')).find(element =>
+          element.getAttribute('src') || element.getAttribute('data-src')
+        );
+        if (!image) throw new Error('ページ内に画像が見つかりません。');
+        const imageUrl = new URL(image.getAttribute('src') || image.getAttribute('data-src'), page.href);
+        if (!isDirectImageUrl(imageUrl.href)) throw new Error('対応していない画像形式です。');
+        return imageUrl;
+      }
+
+      function probeImage(url) {
+        return new Promise(resolve => {
+          const image = new Image();
+          image.onload = () => resolve(true);
+          image.onerror = () => resolve(false);
+          image.src = url.href;
+        });
+      }
+
+      async function loadUrlComicImages(inputUrl, onImageFound) {
+        const firstImageUrl = isDirectImageUrl(inputUrl)
+          ? new URL(inputUrl)
+          : await extractImageUrlFromPage(inputUrl);
+        const pathMatch = firstImageUrl.pathname.match(/^(.*?)(\d+)(\.[^./]+)$/);
+        if (!pathMatch) {
+          if (!(await probeImage(firstImageUrl))) throw new Error('指定された画像を読み込めませんでした。');
+          await onImageFound(firstImageUrl.href, 1);
+          return 1;
+        }
+
+        const [, prefix, initialDigits, originalExtension] = pathMatch;
+        const firstNumber = Number(initialDigits);
+        const legacyExtensions = ['.jpg', '.png', '.jpeg', '.webp'];
+        const isLegacyExtension = legacyExtensions.includes(originalExtension.toLowerCase());
+        const extensions = isLegacyExtension
+          ? [originalExtension, ...legacyExtensions.filter(extension => extension !== originalExtension.toLowerCase())]
+          : [originalExtension];
+        let loadedCount = 0;
+        let consecutiveMisses = 0;
+        const maxConsecutiveMisses = 4;
+        const maxPages = 5000;
+
+        for (let offset = 0; offset < maxPages && consecutiveMisses < maxConsecutiveMisses; offset++) {
+          const number = String(firstNumber + offset).padStart(initialDigits.length, '0');
+          let foundUrl = null;
+          for (const extension of extensions) {
+            const candidate = new URL(firstImageUrl.href);
+            candidate.pathname = `${prefix}${number}${extension}`;
+            if (await probeImage(candidate)) {
+              foundUrl = candidate.href;
+              break;
+            }
+          }
+
+          if (foundUrl) {
+            consecutiveMisses = 0;
+            loadedCount++;
+            await onImageFound(foundUrl, loadedCount);
+          } else {
+            consecutiveMisses++;
+          }
+        }
+
+        if (!loadedCount) throw new Error('連番画像を読み込めませんでした。');
+        return loadedCount;
+      }
+
+      loadUrlComicBtn.addEventListener('click', async function () {
+        const inputUrl = urlInput.value.trim();
+        if (!inputUrl) {
+          document.getElementById('errorContainer').textContent = '画像URLを入力してください。';
+          return;
+        }
+
+        if (loadedComic && loadedComic.source === 'url'
+          && inputUrl === loadedComic.inputUrl && images.length) {
+          urlComicTitle = urlTitleInput.value.trim();
+          openViewer();
+          return;
+        }
+
+        setSourceLoading(true);
+        urlComicLoading = true;
+        pendingUrlNext = 0;
+        document.getElementById('errorContainer').textContent = '画像URLを確認しています...';
+        showReaderStatus('画像読込中...');
+        let readerOpened = false;
+        try {
+          await loadUrlComicImages(inputUrl, function (imageUrl, loadedCount) {
+            if (!readerOpened) {
+              releaseArchiveObjectUrls();
+              activeArchiveProgressKey = null;
+              activeArchiveProgressName = '';
+              activeArchivePageNames = [];
+              activeSource = 'url';
+              urlComicTitle = urlTitleInput.value.trim();
+              loadedComic = { source: 'url', inputUrl };
+              menuDownloadBtn.style.display = 'inline-block';
+              menuDownloadBtn.disabled = true;
+              menuDownloadBtn.textContent = '読み込み中...';
+              images = [];
+              idx = 0;
+              readerOpened = true;
+              updateSourceButtonLabels();
+            }
+
+            images.push(imageUrl);
+            document.getElementById('errorContainer').textContent = `画像を読み込み中... ${loadedCount} 枚`;
+            showReaderStatus(`画像読込 ${loadedCount}枚`);
+            if (loadedCount === 1) {
+              openViewer();
+            } else if (viewerOverlay.getAttribute('aria-hidden') !== 'true') {
+              renderViewer(false);
+              drainPendingUrlNext();
+            }
+          });
+          urlComicLoading = false;
+          pendingUrlNext = 0;
+          document.getElementById('errorContainer').textContent = `${urlComicTitle || 'URL画像'} を ${images.length} 枚読み込みました。`;
+          menuDownloadBtn.disabled = false;
+          menuDownloadBtn.textContent = 'ZIP保存';
+        } catch (error) {
+          urlComicLoading = false;
+          pendingUrlNext = 0;
+          console.error('URL画像の読み込みエラー:', error);
+          document.getElementById('errorContainer').textContent = error.message || '画像を読み込めませんでした。';
+        } finally {
+          urlComicLoading = false;
+          pendingUrlNext = 0;
+          hideReaderStatus();
+          if (readerOpened) {
+            menuDownloadBtn.disabled = false;
+            menuDownloadBtn.textContent = 'ZIP保存';
+          }
+          setSourceLoading(false);
+          updateSourceButtonLabels();
+        }
+      });
 
       openArchiveBtn.addEventListener('click', async function () {
         const file = archiveFileInput.files && archiveFileInput.files[0];
+        if (canReuseLoadedArchive(file)) {
+          activeSource = 'archive';
+          openViewer();
+          return;
+        }
         if (!file) {
           document.getElementById('errorContainer').textContent = 'ZIP または RAR ファイルを選択してください。';
           return;
@@ -887,7 +1021,7 @@
           }
         }
 
-        openArchiveBtn.disabled = true;
+        setSourceLoading(true);
         document.getElementById('errorContainer').textContent = '書庫を展開しています...';
         try {
           if (/\.zip$/i.test(file.name)) await openZipArchive(file);
@@ -897,11 +1031,10 @@
           console.error('書庫の読み込みエラー:', error);
           document.getElementById('errorContainer').textContent = '書庫を開けませんでした: ' + (error.message || 'ファイル形式または内容を確認してください。');
         } finally {
-          openArchiveBtn.disabled = false;
+          setSourceLoading(false);
         }
       });
       // viewer elements
-      const viewerToggle = document.getElementById('viewerToggle');
       const viewerOverlay = document.getElementById('viewerOverlay');
       const singleImage = document.getElementById('singleImage');
       const spreadWrapper = document.getElementById('spreadWrapper');
@@ -913,7 +1046,6 @@
       const menuBtn = document.getElementById('menuBtn');
       const menuPanel = document.getElementById('menuPanel');
       const menuCloseBtn = document.getElementById('menuCloseBtn');
-      const menuDownloadBtn = document.getElementById('menuDownloadBtn');
       const firstBtn = document.getElementById('firstBtn');
       const pageSlider = document.getElementById('pageSlider');
       const shiftSwitch = document.getElementById('shiftSwitch');
@@ -1028,245 +1160,27 @@
       window.addEventListener('resize', preservePanoramaPageDuringResize);
       window.addEventListener('orientationchange', preservePanoramaPageDuringResize);
 
-      function setProgress(v) {
-        progressCircle.style.setProperty('--progress', v);
-        progressText.textContent = v + '%';
-      }
-
-      
-      window.processDisplay = async function () {
-        const isLinkMode = document.getElementById('linkToggle').checked;
-        const input = document.getElementById('textInput');
-        const errorContainer = document.getElementById('errorContainer');
-      
-        loader.style.display = 'none';
-        fixedLoder.style.display = 'block';
-        progressText.style.display = 'none';
-        setProgress(0);
-      
-        activeArchiveProgressKey = null;
-        activeArchiveProgressName = '';
-        activeArchivePageNames = [];
-        releaseArchiveObjectUrls();
-        document.getElementById('imageContainer').innerHTML = '';
-        errorContainer.innerText = '';
-      
-        try {
-          const url = input.value.trim();
-      
-          if (!url) {
-            throw new Error('URLを入力してください。');
-          }
-      
-          // 画像URLなら従来の処理を使用
-          // ページURLならHTMLから画像URLを抽出する
-          if (!isDirectImageUrl(url)) {
-            errorContainer.innerText = 'ページから画像URLを取得中...';
-      
-            const imageUrl = await extractImageUrlFromPage(url);
-      
-            // 抽出した画像URLを既存処理に渡す
-            input.value = imageUrl;
-            errorContainer.innerText = '';
-          }
-      
-          if (isLinkMode) {
-            generateLinks();
-          } else {
-            displayImages();
-          }
-        } catch (error) {
-          console.error('画像URL取得エラー:', error);
-      
-          errorContainer.innerText =
-            'エラー: ' + (error.message || '画像URLを取得できませんでした。');
-      
-          loader.style.display = 'none';
-          fixedLoder.style.display = 'none';
-        }
-      };
-
-      function generateLinks() {
-        const input = document.getElementById('textInput').value.trim();
-        const isValid = extensions.some(ext => input.toLowerCase().endsWith(ext));
-        if (!isValid) {
-          document.getElementById('errorContainer').innerText = '画像URLを入力してください。';
-          loader.style.display = 'none';
-          fixedLoder.style.display = 'none';
-          return;
-        }
-        const base = input.slice(0, input.lastIndexOf('.') - 1);
-        let i = 1,
-          failCount = 0;
-        const maxFails = extensions.length;
-        const container = document.getElementById('imageContainer');
-
-        (function next() {
-          if (failCount >= maxFails) {
-            fixedLoder.style.display = 'none';
-            updateImagesFromContainer();
-            return;
-          }
-
-          let tried = 0;
-
-          function tryNextExt() {
-            if (tried >= extensions.length) {
-              failCount++;
-              i++;
-              next();
-              return;
-            }
-
-            const ext = extensions[tried];
-            const url = base + i + ext;
-            const img = new Image();
-
-            img.onload = function () {
-              const div = document.createElement('div');
-              div.className = 'linkContainer';
-              const a = document.createElement('a');
-              a.href = url;
-              a.target = '_blank';
-              a.textContent = url;
-              div.appendChild(a);
-              container.appendChild(div);
-
-              failCount = 0;
-              i++;
-              next();
-            };
-
-            img.onerror = function () {
-              tried++;
-              tryNextExt();
-            };
-
-            img.src = url;
-          }
-
-          tryNextExt();
-        })();
-      }
-
-      function displayImages() {
-        const input = document.getElementById('textInput').value.trim();
-        const isValid = extensions.some(ext => input.toLowerCase().endsWith(ext));
-        if (!isValid) {
-          document.getElementById('errorContainer').innerText = '画像URLを入力してください。';
-          loader.style.display = 'none';
-          fixedLoder.style.display = 'none';
-          return;
-        }
-        const base = input.slice(0, input.lastIndexOf('.') - 1);
-        let i = 1, failCount = 0;
-
-        const maxFails = extensions.length;
-        const container = document.getElementById('imageContainer');
-
-        (function next() {
-          if (failCount >= maxFails) {
-            fixedLoder.style.display = 'none';
-            updateImagesFromContainer();
-            return;
-          }
-
-          let tried = 0;
-
-          function tryNextExt() {
-            if (tried >= extensions.length) {
-              failCount++;
-              i++;
-              next();
-              return;
-            }
-
-            const ext = extensions[tried];
-            const url = base + i + ext;
-            const img = new Image();
-
-            img.onload = function () {
-              const wrap = document.createElement('div');
-              wrap.className = 'imageContainer';
-              const imgEl = document.createElement('img');
-              imgEl.src = url;
-              imgEl.alt = 'image ' + i;
-              imgEl.loading = 'lazy';
-              const num = document.createElement('div');
-              num.className = 'imageNumber';
-              num.textContent = i;
-              wrap.appendChild(imgEl);
-              wrap.appendChild(num);
-              container.appendChild(wrap);
-
-              failCount = 0;
-              i++;
-              next();
-            };
-
-            img.onerror = function () {
-              tried++;
-              tryNextExt();
-            };
-
-            img.src = url;
-          }
-
-          tryNextExt();
-        })();
-      }
-
       function ensurePanoramaDOM() {
-        // 既に同じ数の img があれば src を単に更新して終わり（使い回し）
         const existing = Array.from(panoramaWrapper.querySelectorAll('img'));
-        if (existing.length === images.length) {
-          existing.forEach((el, i) => {
-            if (images[i] && el.src !== images[i]) el.src = images[i];
-            else if (!images[i]) el.removeAttribute('src');
-          });
-          return;
+        const sharedLength = Math.min(existing.length, images.length);
+
+        for (let i = 0; i < sharedLength; i++) {
+          if (existing[i].src !== images[i]) existing[i].src = images[i];
+          existing[i].dataset.index = i;
         }
 
-        // 数が変わっている／初回：一度だけ再構築
-        panoramaWrapper.innerHTML = '';
-        images.forEach((src, i) => {
+        for (let i = existing.length - 1; i >= images.length; i--) {
+          existing[i].remove();
+        }
+
+        for (let i = existing.length; i < images.length; i++) {
           const img = document.createElement('img');
           img.dataset.index = i;
-          if (src) img.src = src;
+          img.src = images[i];
           img.alt = 'p' + (i + 1);
           panoramaWrapper.appendChild(img);
-        });
-      }
-
-      async function downloadImages() {
-        loader.style.display = 'block';
-        fixedLoder.style.display = 'none';
-        progressText.style.display = 'block';
-
-        const imgs = document.getElementById('imageContainer').getElementsByTagName('img');
-        const zip = new JSZip();
-        const name = document.getElementById('zipFileNameInput').value.trim() || 'images';
-
-        for (let k = 0; k < imgs.length; k++) {
-          const url = imgs[k].src;
-          const res = await fetch(url, { mode: 'cors' });
-          const blob = await res.blob();
-          zip.file((k + 1) + '.jpg', blob);
-          setProgress(Math.round(((k + 1) / imgs.length) * 100));
         }
-
-        zip.generateAsync({ type: 'blob' })
-          .then(function (content) {
-            saveAs(content, name + '.zip'); loader.style.display = 'none';
-
-            document.getElementById('textInput').value = '';
-            document.getElementById('zipFileNameInput').value = '';
-          })
-          .catch(function (e) { console.error(e); loader.style.display = 'none'; });
       }
-
-      window.displayImages = displayImages;
-      window.downloadImages = downloadImages;
 
       function getSpreadPairStart(pageIndex) {
         if (shiftSwitch.checked) return Math.floor(pageIndex / 2) * 2;
@@ -1313,7 +1227,7 @@
 
       // Viewer behaviours
       function openViewer() { if (!images.length) return; viewerOverlay.classList.remove('viewer-ui-hidden'); viewerOverlay.style.display = 'flex'; viewerOverlay.setAttribute('aria-hidden', 'false'); renderViewer(); }
-      function closeViewer() { viewerOverlay.classList.remove('viewer-ui-hidden'); viewerOverlay.style.display = 'none'; viewerOverlay.setAttribute('aria-hidden', 'true'); try { viewerToggle.checked = false; } catch (e) { }; closeMenu(); }
+      function closeViewer() { viewerOverlay.classList.remove('viewer-ui-hidden'); viewerOverlay.style.display = 'none'; viewerOverlay.setAttribute('aria-hidden', 'true'); closeMenu(); }
       function renderViewer(saveProgress = true) {
         const spreadOn = spreadSwitch.checked;
         const panoOn = panoramaSwitch.checked;
@@ -1385,9 +1299,28 @@
         updatePageIndicator(saveProgress);
       }
 
+      function canAdvanceNext() {
+        if (!images.length) return false;
+        if (panoramaSwitch.checked || !spreadSwitch.checked) return idx < images.length - 1;
+        const nextIndex = !shiftSwitch.checked && idx === 0 ? 1 : idx + 2;
+        return nextIndex < images.length;
+      }
+
+      function drainPendingUrlNext() {
+        while (pendingUrlNext > 0 && canAdvanceNext()) {
+          pendingUrlNext--;
+          next();
+        }
+      }
+
       function next() {
         const spreadOn = spreadSwitch.checked;
         const panoOn = panoramaSwitch.checked;
+
+        if (!canAdvanceNext()) {
+          if (urlComicLoading) pendingUrlNext = Math.min(pendingUrlNext + 1, 50);
+          return;
+        }
 
         if (panoOn) {
           if (idx < images.length - 1) {
@@ -1510,43 +1443,45 @@
         touchStartX = null;
       }, { passive: true });
 
-      viewerOverlay.addEventListener('touchend', function (e) {
-        if (touchStartX == null) return;
-        const dx = e.changedTouches[0].clientX - touchStartX;
-
-        if (Math.abs(dx) > 40) {
-          if (dirRight.checked) {
-            // 右開き
-            if (dx < 0) prev();
-            else next();
-          } else {
-            // 左開き
-            if (dx < 0) next();
-            else prev();
-          }
-        }
-
-        touchStartX = null;
-      }, { passive: true });
-
-      // viewer toggle
-      viewerToggle.addEventListener('change', function () {
-        if (viewerToggle.checked) { if (images.length) openViewer(); else { } }
-        else { closeViewer(); }
-      });
-
-      // observe changes to imageContainer
-      const observer = new MutationObserver(function () { updateImagesFromContainer(); });
-      observer.observe(document.getElementById('imageContainer'), { childList: true, subtree: true });
-
       // Menu panel
       menuBtn.addEventListener('click', function (e) { e.stopPropagation(); openMenu(); });
-      function openMenu() { menuPanel.style.display = 'block'; menuPanel.setAttribute('aria-hidden', 'false'); }
+      function openMenu() { readerZipNameSetting.hidden = activeSource !== 'url'; readerZipNameInput.value = urlTitleInput.value; menuPanel.style.display = 'block'; menuPanel.setAttribute('aria-hidden', 'false'); }
       function closeMenu() { menuPanel.style.display = 'none'; menuPanel.setAttribute('aria-hidden', 'true'); }
       menuCloseBtn.addEventListener('click', function (e) { e.stopPropagation(); closeMenu(); });
-
-      // menu download action -> same as one-click download (close menu first)
-      menuDownloadBtn.addEventListener('click', function (e) { e.stopPropagation(); closeMenu(); setTimeout(function () { downloadImages(); }, 50); });
+      menuDownloadBtn.addEventListener('click', async function (e) {
+        e.stopPropagation();
+        if (activeSource !== 'url' || !images.length) return;
+        menuDownloadBtn.disabled = true;
+        menuDownloadBtn.textContent = '作成中...';
+        closeMenu();
+        showReaderStatus(`ZIP 0/${images.length}`);
+        try {
+          const zip = new JSZip();
+          for (let index = 0; index < images.length; index++) {
+            const response = await fetch(images[index], { mode: 'cors' });
+            if (!response.ok) throw new Error(`画像取得失敗: HTTP ${response.status}`);
+            const blob = await response.blob();
+            const extension = (() => {
+              try { return new URL(images[index]).pathname.match(/\.([a-z0-9]+)$/i)?.[1] || 'jpg'; }
+              catch (error) { return 'jpg'; }
+            })();
+            zip.file(`${String(index + 1).padStart(4, '0')}.${extension}`, blob);
+            showReaderStatus(`ZIP ${index + 1}/${images.length}`);
+          }
+          const content = await zip.generateAsync({ type: 'blob' }, function (metadata) {
+            showReaderStatus(`圧縮 ${Math.floor(metadata.percent)}%`);
+          });
+          const safeName = (urlComicTitle || 'comic').replace(/[\\/:*?"<>|]/g, '_');
+          saveAs(content, `${safeName}.zip`);
+        } catch (error) {
+          console.error('ZIP保存エラー:', error);
+          document.getElementById('errorContainer').textContent = error.message || 'ZIPを作成できませんでした。';
+        } finally {
+          hideReaderStatus();
+          menuDownloadBtn.disabled = false;
+          menuDownloadBtn.textContent = 'ZIP保存';
+        }
+      });
 
       // clicking outside menu closes it
       document.addEventListener('click', function (e) {
@@ -1594,18 +1529,7 @@
           panoramaProgrammaticUnlockTimer = null;
         }, behavior === 'smooth' ? 500 : 180);
       }
-      function updateImagesFromContainer() {
-        const imgs = Array.from(document.querySelectorAll('#imageContainer img'));
-        images = imgs.map(i => i.src);
-        if (idx >= images.length) idx = Math.max(0, images.length - 1);
-        ensurePanoramaDOM();
 
-        if (viewerToggle.checked && images.length) {
-          if (viewerOverlay.getAttribute('aria-hidden') === 'true') openViewer();
-          else renderViewer();
-        }
-      }
-      window.updateImagesFromContainer = updateImagesFromContainer;
 
     });
   </script>
