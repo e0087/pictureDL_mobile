@@ -620,8 +620,8 @@
       const urlModeTab = document.getElementById('urlModeTab');
       const archiveSourcePanel = document.getElementById('archiveSourcePanel');
       const urlSourcePanel = document.getElementById('urlSourcePanel');
-      let activeSource = 'archive';
       const sharedUrl = new URLSearchParams(window.location.search).get('url');
+      let activeSource = 'archive';
       let urlComicTitle = '';
       let loadedComic = null;
       let urlComicLoading = false;
@@ -688,10 +688,8 @@
       archiveFileInput.addEventListener('change', updateSourceButtonLabels);
       urlInput.addEventListener('input', updateSourceButtonLabels);
 
-      if (sharedUrl) {
-        urlInput.value = sharedUrl;
-        setSourceMode('url');
-      }
+      if (sharedUrl) urlInput.value = sharedUrl;
+      setSourceMode(sharedUrl ? 'url' : 'archive');
 
       function syncUrlTitleInputs(value) {
         urlTitleInput.value = value;
@@ -1062,6 +1060,34 @@
       const pageSlider = document.getElementById('pageSlider');
       const shiftSwitch = document.getElementById('shiftSwitch');
       const panoramaSwitch = document.getElementById('panoramaSwitch');
+      const readerSettingsStorageKey = 'pictureDL:reader-settings:v1';
+
+      function saveReaderSettings() {
+        try {
+          localStorage.setItem(readerSettingsStorageKey, JSON.stringify({
+            spread: spreadSwitch.checked,
+            panorama: panoramaSwitch.checked,
+            openDirection: dirLeft.checked ? 'left' : 'right',
+            pageShift: shiftSwitch.checked
+          }));
+        } catch (error) {
+          console.warn('リーダー設定を保存できませんでした:', error);
+        }
+      }
+
+      try {
+        const savedSettings = JSON.parse(localStorage.getItem(readerSettingsStorageKey) || 'null');
+        if (savedSettings && typeof savedSettings === 'object') {
+          panoramaSwitch.checked = savedSettings.panorama === true;
+          spreadSwitch.checked = !panoramaSwitch.checked && savedSettings.spread === true;
+          shiftSwitch.checked = savedSettings.pageShift === true;
+          dirLeft.checked = savedSettings.openDirection === 'left';
+          dirRight.checked = !dirLeft.checked;
+        }
+      } catch (error) {
+        console.warn('保存済みのリーダー設定を読み込めませんでした:', error);
+      }
+
       const panoramaWrapper = document.createElement('div');
       panoramaWrapper.id = 'panoramaWrapper';
       document.getElementById('viewerInner').appendChild(panoramaWrapper);
@@ -1526,20 +1552,23 @@
       spreadSwitch.addEventListener('change', function () {
         if (spreadSwitch.checked) idx = getSpreadPairStart(idx);
         panoramaSwitch.checked = false;
+        saveReaderSettings();
         renderViewer();
       });
       shiftSwitch.addEventListener('change', function () {
         if (spreadSwitch.checked) idx = getSpreadPairStart(idx);
+        saveReaderSettings();
         renderViewer();
       });
       panoramaSwitch.addEventListener('change', function () {
         if (panoramaSwitch.checked) {
           spreadSwitch.checked = false;
         }
+        saveReaderSettings();
         renderViewer();
       });
-      dirRight.addEventListener('change', function () { renderViewer(); });
-      dirLeft.addEventListener('change', function () { renderViewer(); });
+      dirRight.addEventListener('change', function () { saveReaderSettings(); renderViewer(); });
+      dirLeft.addEventListener('change', function () { saveReaderSettings(); renderViewer(); });
 
       // utility
       function scrollToPanoramaIndex(pageIndex, behavior) {
