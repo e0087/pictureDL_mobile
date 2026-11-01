@@ -82,7 +82,7 @@
       font-weight: 600;
     }
 
-    #archiveFileInput {
+    #archiveFileInput, #nextArchiveFileInput {
       display: block;
       width: 100%;
       min-height: 48px;
@@ -93,7 +93,7 @@
       background: #10141b;
     }
 
-    #openArchiveBtn, #loadUrlComicBtn {
+    #openArchiveBtn, #loadUrlComicBtn, #nextArchiveLoadBtn {
       width: 100%;
       min-height: 50px;
       margin-top: 14px;
@@ -107,7 +107,7 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    #openArchiveBtn:disabled, #loadUrlComicBtn:disabled {
+    #openArchiveBtn:disabled, #loadUrlComicBtn:disabled, #nextArchiveLoadBtn:disabled {
       opacity: 0.6;
       cursor: wait;
     }
@@ -370,6 +370,37 @@
 
     #menuPanel h3 { margin: 0 0 14px; font-size: 17px; }
 
+    #nextArchiveDialog {
+      position: fixed;
+      inset: 0;
+      z-index: 12000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.72);
+    }
+
+    #nextArchiveDialog[hidden] { display: none; }
+
+    .nextArchiveCard {
+      width: min(420px, 100%);
+      padding: 20px;
+      border: 1px solid #414958;
+      border-radius: 14px;
+      color: #fff;
+      background: rgba(24, 28, 36, 0.98);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.65);
+    }
+
+    .nextArchiveCard h2 { margin: 0 0 16px; font-size: 18px; }
+    .nextArchiveCard label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; }
+    #nextArchiveError { min-height: 1.5em; margin: 12px 0 0; color: #ff9c9c; font-size: 13px; }
+    .nextArchiveActions { display: flex; gap: 8px; margin-top: 16px; }
+    .nextArchiveActions .viewerBtn,
+    .nextArchiveActions #nextArchiveLoadBtn { flex: 1; min-height: 50px; }
+    .nextArchiveActions #nextArchiveLoadBtn { width: auto; margin-top: 0; }
+
     .menuRow {
       display: flex;
       align-items: center;
@@ -546,6 +577,19 @@
     </div>
   </div>
 
+  <div id="nextArchiveDialog" hidden role="dialog" aria-modal="true" aria-labelledby="nextArchiveTitle">
+    <div class="nextArchiveCard">
+      <h2 id="nextArchiveTitle">次の書庫を読み込みますか？</h2>
+      <label class="archiveLabel" for="nextArchiveFileInput">ZIP / RAR ファイル</label>
+      <input id="nextArchiveFileInput" type="file" accept=".zip,.rar,application/zip,application/vnd.rar">
+      <p id="nextArchiveError" role="status" aria-live="polite"></p>
+      <div class="nextArchiveActions">
+        <button id="nextArchiveCancelBtn" class="viewerBtn" type="button">キャンセル</button>
+        <button id="nextArchiveLoadBtn" class="viewerBtn" type="button" disabled>読み込んで読む</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Menu panel (modal) -->
   <div id="menuPanel" role="dialog" aria-modal="true" aria-hidden="true">
     <h3>リーダー設定</h3>
@@ -618,6 +662,11 @@
       const menuDownloadBtn = document.getElementById('menuDownloadBtn');
       const archiveModeTab = document.getElementById('archiveModeTab');
       const urlModeTab = document.getElementById('urlModeTab');
+      const nextArchiveDialog = document.getElementById('nextArchiveDialog');
+      const nextArchiveFileInput = document.getElementById('nextArchiveFileInput');
+      const nextArchiveError = document.getElementById('nextArchiveError');
+      const nextArchiveCancelBtn = document.getElementById('nextArchiveCancelBtn');
+      const nextArchiveLoadBtn = document.getElementById('nextArchiveLoadBtn');
       const archiveSourcePanel = document.getElementById('archiveSourcePanel');
       const urlSourcePanel = document.getElementById('urlSourcePanel');
       const sharedUrl = new URLSearchParams(window.location.search).get('url');
@@ -1008,16 +1057,15 @@
         }
       });
 
-      openArchiveBtn.addEventListener('click', async function () {
-        const file = archiveFileInput.files && archiveFileInput.files[0];
+      async function loadArchiveFile(file) {
+        if (!file) {
+          document.getElementById('errorContainer').textContent = 'ZIP または RAR ファイルを選択してください。';
+          return false;
+        }
         if (canReuseLoadedArchive(file)) {
           activeSource = 'archive';
           openViewer();
-          return;
-        }
-        if (!file) {
-          document.getElementById('errorContainer').textContent = 'ZIP または RAR ファイルを選択してください。';
-          return;
+          return true;
         }
 
         const isSupportedArchive = /\.(zip|rar)$/i.test(file.name);
@@ -1027,7 +1075,7 @@
             && !isSameArchiveName(savedProgress.archiveName, file.name);
           if (isDifferentVolume && hasSavedMidProgress(savedProgress)) {
             const message = `${savedProgress.archiveName} を ${savedProgress.page}/${savedProgress.maxPage} ページまで読んだ記録があります。\n別巻「${file.name}」を開きますか？`;
-            if (!window.confirm(message)) return;
+            if (!window.confirm(message)) return false;
           }
         }
 
@@ -1037,12 +1085,19 @@
           if (/\.zip$/i.test(file.name)) await openZipArchive(file);
           else if (/\.rar$/i.test(file.name)) await openRarArchive(file);
           else throw new Error('対応している形式は ZIP と RAR です。');
+          return true;
         } catch (error) {
           console.error('書庫の読み込みエラー:', error);
           document.getElementById('errorContainer').textContent = '書庫を開けませんでした: ' + (error.message || 'ファイル形式または内容を確認してください。');
+          return false;
         } finally {
           setSourceLoading(false);
         }
+      }
+
+      openArchiveBtn.addEventListener('click', async function () {
+        const file = archiveFileInput.files && archiveFileInput.files[0];
+        await loadArchiveFile(file);
       });
       // viewer elements
       const viewerOverlay = document.getElementById('viewerOverlay');
@@ -1367,12 +1422,36 @@
         }
       }
 
+      function openNextArchiveDialog() {
+        nextArchiveFileInput.disabled = false;
+        nextArchiveCancelBtn.disabled = false;
+        nextArchiveFileInput.value = '';
+        nextArchiveError.textContent = '';
+        nextArchiveLoadBtn.disabled = true;
+        nextArchiveDialog.hidden = false;
+        nextArchiveFileInput.focus();
+      }
+
+      function closeNextArchiveDialog() {
+        nextArchiveDialog.hidden = true;
+        nextArchiveFileInput.disabled = false;
+        nextArchiveCancelBtn.disabled = false;
+        nextArchiveFileInput.value = '';
+        nextArchiveError.textContent = '';
+        nextArchiveLoadBtn.disabled = true;
+      }
+
       function next() {
         const spreadOn = spreadSwitch.checked;
         const panoOn = panoramaSwitch.checked;
 
         if (!canAdvanceNext()) {
-          if (urlComicLoading) pendingUrlNext = Math.min(pendingUrlNext + 1, 50);
+          if (urlComicLoading) {
+            pendingUrlNext = Math.min(pendingUrlNext + 1, 50);
+          } else if (loadedComic && loadedComic.source === 'archive' && images.length
+            && viewerOverlay.getAttribute('aria-hidden') !== 'true') {
+            openNextArchiveDialog();
+          }
           return;
         }
 
@@ -1417,6 +1496,33 @@
         }
       }
 
+      nextArchiveFileInput.addEventListener('change', function () {
+        nextArchiveLoadBtn.disabled = !(nextArchiveFileInput.files && nextArchiveFileInput.files[0]);
+        nextArchiveError.textContent = '';
+      });
+      nextArchiveCancelBtn.addEventListener('click', closeNextArchiveDialog);
+      nextArchiveDialog.addEventListener('click', function (e) {
+        if (e.target === nextArchiveDialog) closeNextArchiveDialog();
+      });
+      nextArchiveLoadBtn.addEventListener('click', async function () {
+        const file = nextArchiveFileInput.files && nextArchiveFileInput.files[0];
+        if (!file) return;
+        nextArchiveLoadBtn.disabled = true;
+        nextArchiveCancelBtn.disabled = true;
+        nextArchiveFileInput.disabled = true;
+        nextArchiveError.textContent = '書庫を展開しています...';
+        document.getElementById('errorContainer').textContent = '';
+        const loaded = await loadArchiveFile(file);
+        if (loaded) {
+          closeNextArchiveDialog();
+        } else {
+          nextArchiveError.textContent = document.getElementById('errorContainer').textContent;
+          nextArchiveLoadBtn.disabled = !(nextArchiveFileInput.files && nextArchiveFileInput.files[0]);
+        }
+        nextArchiveCancelBtn.disabled = false;
+        nextArchiveFileInput.disabled = false;
+      });
+
       document.getElementById('nextBtn').addEventListener('click', function (e) { e.stopPropagation(); next(); });
       document.getElementById('prevBtn').addEventListener('click', function (e) { e.stopPropagation(); prev(); });
       document.getElementById('closeBtn').addEventListener('click', function (e) { e.stopPropagation(); closeViewer(); });
@@ -1456,6 +1562,11 @@
       });
       // keyboard
       document.addEventListener('keydown', function (e) {
+        if (!nextArchiveDialog.hidden && e.key === 'Escape') {
+          closeNextArchiveDialog();
+          e.stopPropagation();
+          return;
+        }
         if (viewerOverlay.getAttribute('aria-hidden') === 'true') return;
         if (e.key === 'ArrowRight') next();
         else if (e.key === 'ArrowLeft') prev();
