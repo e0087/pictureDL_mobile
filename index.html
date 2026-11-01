@@ -621,6 +621,7 @@
       const archiveSourcePanel = document.getElementById('archiveSourcePanel');
       const urlSourcePanel = document.getElementById('urlSourcePanel');
       let activeSource = 'archive';
+      const sharedUrl = new URLSearchParams(window.location.search).get('url');
       let urlComicTitle = '';
       let loadedComic = null;
       let urlComicLoading = false;
@@ -686,6 +687,11 @@
 
       archiveFileInput.addEventListener('change', updateSourceButtonLabels);
       urlInput.addEventListener('input', updateSourceButtonLabels);
+
+      if (sharedUrl) {
+        urlInput.value = sharedUrl;
+        setSourceMode('url');
+      }
 
       function syncUrlTitleInputs(value) {
         urlTitleInput.value = value;
