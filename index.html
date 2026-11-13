@@ -490,7 +490,7 @@
       display: none;
       width: 100vw;
       height: 100vh;
-      height: 100dvh;
+      height: 100svh;
       margin: 0;
       overflow-x: auto;
       overflow-y: hidden;
@@ -785,6 +785,15 @@
           && page > 1 && page < maxPage;
       }
 
+      function clearArchiveProgress() {
+        if (!activeArchiveProgressKey) return;
+        try {
+          localStorage.removeItem(activeArchiveProgressKey);
+        } catch (error) {
+          console.warn('読書位置を削除できませんでした:', error);
+        }
+      }
+
       function saveArchiveProgress() {
         if (!activeArchiveProgressKey || !images.length) return;
 
@@ -797,7 +806,7 @@
         try {
           // 先頭または最後の見開きまで読んだ状態は保存せず、既存記録も削除する
           if (currentPage === 1 || lastVisibleIndex >= maxPage - 1) {
-            localStorage.removeItem(activeArchiveProgressKey);
+            clearArchiveProgress();
             return;
           }
 
@@ -1057,7 +1066,7 @@
         }
       });
 
-      async function loadArchiveFile(file, startAtFirstPage = false) {
+      async function loadArchiveFile(file, fromNextDialog = false) {
         if (!file) {
           document.getElementById('errorContainer').textContent = 'ZIP または RAR ファイルを選択してください。';
           return false;
@@ -1069,7 +1078,7 @@
         }
 
         const isSupportedArchive = /\.(zip|rar)$/i.test(file.name);
-        if (isSupportedArchive) {
+        if (isSupportedArchive && !fromNextDialog) {
           const savedProgress = readArchiveProgress(getArchiveProgressKey(file.name));
           const isDifferentVolume = savedProgress
             && !isSameArchiveName(savedProgress.archiveName, file.name);
@@ -1082,8 +1091,8 @@
         setSourceLoading(true);
         document.getElementById('errorContainer').textContent = '書庫を展開しています...';
         try {
-          if (/\.zip$/i.test(file.name)) await openZipArchive(file, startAtFirstPage);
-          else if (/\.rar$/i.test(file.name)) await openRarArchive(file, startAtFirstPage);
+          if (/\.zip$/i.test(file.name)) await openZipArchive(file, fromNextDialog);
+          else if (/\.rar$/i.test(file.name)) await openRarArchive(file, fromNextDialog);
           else throw new Error('対応している形式は ZIP と RAR です。');
           return true;
         } catch (error) {
@@ -1264,12 +1273,15 @@
         }, 250);
       }
 
-      window.addEventListener('resize', preservePanoramaPageDuringResize);
-      window.addEventListener('orientationchange', preservePanoramaPageDuringResize);
-      if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', preservePanoramaPageDuringResize);
-        window.visualViewport.addEventListener('scroll', preservePanoramaPageDuringResize);
+      let panoramaOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+      function preservePanoramaPageOnOrientationChange() {
+        const nextOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+        if (nextOrientation === panoramaOrientation) return;
+        panoramaOrientation = nextOrientation;
+        preservePanoramaPageDuringResize();
       }
+      window.addEventListener('orientationchange', preservePanoramaPageOnOrientationChange);
+      window.addEventListener('resize', preservePanoramaPageOnOrientationChange);
 
       function ensurePanoramaDOM() {
         const existing = Array.from(panoramaWrapper.querySelectorAll('img'));
@@ -1468,6 +1480,7 @@
             pendingUrlNext = Math.min(pendingUrlNext + 1, 50);
           } else if (loadedComic && loadedComic.source === 'archive' && images.length
             && viewerOverlay.getAttribute('aria-hidden') !== 'true') {
+            clearArchiveProgress();
             openNextArchiveDialog();
           }
           return;
@@ -1601,21 +1614,16 @@
         }, 500);
       }
 
-      function isAtPanoramaForwardEdge() {
-        const lastImage = panoramaWrapper.querySelector(`img[data-index="${images.length - 1}"]`);
-        if (!lastImage || !images.length) return false;
-        const imageRect = lastImage.getBoundingClientRect();
-        const wrapperRect = panoramaWrapper.getBoundingClientRect();
-        return dirRight.checked
-          ? imageRect.left <= wrapperRect.left + 12
-          : imageRect.right >= wrapperRect.right - 12;
-      }
-
       viewerOverlay.addEventListener('touchstart', function (e) {
         touchStartX = e.changedTouches[0].clientX;
         touchStartY = e.changedTouches[0].clientY;
+        const pageAtTouchStart = panoramaSwitch.checked ? findClosestPanoramaIndex() : -1;
+        if (pageAtTouchStart >= 0 && pageAtTouchStart !== idx) {
+          idx = pageAtTouchStart;
+          updatePageIndicator();
+        }
         touchStartedAtPanoramaEnd = panoramaSwitch.checked
-          && (idx >= images.length - 1 || isAtPanoramaForwardEdge());
+          && (pageAtTouchStart === images.length - 1 || idx === images.length - 1);
         ignoreNextViewerClick = false;
         if (viewerClickSuppressionTimer) clearTimeout(viewerClickSuppressionTimer);
       }, { passive: true });
