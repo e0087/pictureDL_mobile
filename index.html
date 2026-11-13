@@ -1073,7 +1073,8 @@
           document.getElementById('errorContainer').textContent = 'ZIP または RAR ファイルを選択してください。';
           return false;
         }
-        if (canReuseLoadedArchive(file)) {
+        // 次巻ダイアログでは同じ書庫を選んだ場合も保存位置を使わず、先頭から開く。
+        if (!fromNextDialog && canReuseLoadedArchive(file)) {
           activeSource = 'archive';
           openViewer();
           return true;
@@ -1450,11 +1451,33 @@
         updatePageIndicator(saveProgress);
       }
 
+      function isPanoramaAtForwardBoundary() {
+        if (!images.length) return false;
+        const lastImage = panoramaWrapper.querySelector(`img[data-index="${images.length - 1}"]`);
+        if (!lastImage) return false;
+        const imageRect = lastImage.getBoundingClientRect();
+        const wrapperRect = panoramaWrapper.getBoundingClientRect();
+        const tolerance = 24;
+        return dirRight.checked
+          ? imageRect.left >= wrapperRect.left - tolerance
+            && imageRect.left <= wrapperRect.left + tolerance
+          : imageRect.right <= wrapperRect.right + tolerance
+            && imageRect.right >= wrapperRect.right - tolerance;
+      }
+
       function canAdvanceNext() {
         if (!images.length) return false;
-        // パノラマの表示ページ番号はスクロール停止時に同期済み。
-        // 操作のたびに画像位置から再推定すると、端やリサイズ中に1ページ前へ戻ることがある。
-        if (panoramaSwitch.checked) return idx < images.length - 1;
+        if (panoramaSwitch.checked) {
+          if (isPanoramaResizing) return idx < images.length - 1;
+          const visibleIndex = findClosestPanoramaIndex();
+          const atForwardBoundary = isPanoramaAtForwardBoundary();
+          if (visibleIndex >= 0) idx = visibleIndex;
+          if (idx >= images.length - 1 || atForwardBoundary) {
+            idx = images.length - 1;
+            return false;
+          }
+          return true;
+        }
         if (!spreadSwitch.checked) return idx < images.length - 1;
         const nextIndex = !shiftSwitch.checked && idx === 0 ? 1 : idx + 2;
         return nextIndex < images.length;
