@@ -829,7 +829,7 @@
         return ({ '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.gif': 'image/gif', '.bmp': 'image/bmp', '.avif': 'image/avif' })[ext] || 'application/octet-stream';
       }
 
-      function renderArchiveImages(entries, archiveFile) {
+      function renderArchiveImages(entries, archiveFile, startAtFirstPage = false) {
         if (!entries.length) throw new Error('書庫内に画像ファイルが見つかりませんでした。');
         entries.sort((a, b) => archiveFileCollator.compare(a.name, b.name));
         const archiveName = archiveFile.name;
@@ -845,7 +845,7 @@
         const savedPageNameIndex = isSameArchiveFile && savedProgress.pageName
           ? activeArchivePageNames.indexOf(savedProgress.pageName)
           : -1;
-        const savedPageIndex = isSameArchiveFile
+        const savedPageIndex = !startAtFirstPage && isSameArchiveFile
           ? (savedPageNameIndex >= 0
             ? savedPageNameIndex
             : Number(savedProgress.page) - 1)
@@ -871,7 +871,7 @@
         openViewer();
       }
 
-      async function openZipArchive(file) {
+      async function openZipArchive(file, startAtFirstPage = false) {
         const zip = await JSZip.loadAsync(file);
         const imageFiles = Object.values(zip.files)
           .filter(entry => !entry.dir && isArchiveImage(entry.name))
@@ -880,13 +880,13 @@
           name: entry.name,
           data: await entry.async('uint8array')
         })));
-        renderArchiveImages(entries, file);
+        renderArchiveImages(entries, file, startAtFirstPage);
       }
 
-      async function openRarArchive(file) {
+      async function openRarArchive(file, startAtFirstPage = false) {
         if (!window.extractRarImages) throw new Error('RAR読み込みライブラリを読み込めませんでした。ネットワーク接続を確認してください。');
         const entries = await window.extractRarImages(file);
-        renderArchiveImages(entries, file);
+        renderArchiveImages(entries, file, startAtFirstPage);
       }
 
       function isDirectImageUrl(value) {
@@ -1057,7 +1057,7 @@
         }
       });
 
-      async function loadArchiveFile(file) {
+      async function loadArchiveFile(file, startAtFirstPage = false) {
         if (!file) {
           document.getElementById('errorContainer').textContent = 'ZIP または RAR ファイルを選択してください。';
           return false;
@@ -1082,8 +1082,8 @@
         setSourceLoading(true);
         document.getElementById('errorContainer').textContent = '書庫を展開しています...';
         try {
-          if (/\.zip$/i.test(file.name)) await openZipArchive(file);
-          else if (/\.rar$/i.test(file.name)) await openRarArchive(file);
+          if (/\.zip$/i.test(file.name)) await openZipArchive(file, startAtFirstPage);
+          else if (/\.rar$/i.test(file.name)) await openRarArchive(file, startAtFirstPage);
           else throw new Error('対応している形式は ZIP と RAR です。');
           return true;
         } catch (error) {
@@ -1152,6 +1152,26 @@
       let panoramaResizeTimeout = null;
       let panoramaScrollTimeout = null;
       let panoramaProgrammaticUnlockTimer = null;
+      function findClosestPanoramaIndex() {
+        const imgs = Array.from(panoramaWrapper.querySelectorAll('img'));
+        if (!imgs.length) return -1;
+        const wrapperRect = panoramaWrapper.getBoundingClientRect();
+        const wrapperCenterX = wrapperRect.left + wrapperRect.width / 2;
+        let closestIndex = 0;
+        let closestDist = Infinity;
+        imgs.forEach(img => {
+          const rect = img.getBoundingClientRect();
+          const imgCenter = rect.left + rect.width / 2;
+          const dist = Math.abs(imgCenter - wrapperCenterX);
+          const index = Number(img.dataset.index);
+          if (dist < closestDist) {
+            closestDist = dist;
+            closestIndex = index;
+          }
+        });
+        return closestIndex;
+      }
+
       panoramaWrapper.addEventListener('scroll', function () {
         if (!panoramaSwitch.checked || isPanoramaResizing) return;
         if (isProgrammaticScroll) {
@@ -1165,22 +1185,8 @@
         if (panoramaScrollTimeout) clearTimeout(panoramaScrollTimeout);
         panoramaScrollTimeout = setTimeout(function () {
           if (isProgrammaticScroll || isPanoramaResizing) return;
-          const imgs = Array.from(panoramaWrapper.querySelectorAll('img'));
-          if (!imgs.length) return;
-          const wrapperRect = panoramaWrapper.getBoundingClientRect();
-          const wrapperCenterX = wrapperRect.left + wrapperRect.width / 2;
-          let closestIndex = 0;
-          let closestDist = Infinity;
-          imgs.forEach(img => {
-            const rect = img.getBoundingClientRect();
-            const imgCenter = rect.left + rect.width / 2;
-            const dist = Math.abs(imgCenter - wrapperCenterX);
-            const index = parseInt(img.dataset.index, 10);
-            if (dist < closestDist) {
-              closestDist = dist;
-              closestIndex = index;
-            }
-          });
+          const closestIndex = findClosestPanoramaIndex();
+          if (closestIndex < 0) return;
           if (idx !== closestIndex) {
             idx = closestIndex;
             updatePageIndicator();
@@ -1189,7 +1195,15 @@
       }, { passive: true });
 
       // --- ビューア全体の三分割タップ制御 ---
+      let ignoreNextViewerClick = false;
+      let viewerClickSuppressionTimer = null;
       viewerOverlay.addEventListener('click', function (e) {
+        if (ignoreNextViewerClick) {
+          ignoreNextViewerClick = false;
+          if (viewerClickSuppressionTimer) clearTimeout(viewerClickSuppressionTimer);
+          viewerClickSuppressionTimer = null;
+          return;
+        }
         // 操作ボタン上のタップはページ操作に使わない
         if (e.target.closest('.viewerControls')) return;
 
@@ -1252,6 +1266,10 @@
 
       window.addEventListener('resize', preservePanoramaPageDuringResize);
       window.addEventListener('orientationchange', preservePanoramaPageDuringResize);
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', preservePanoramaPageDuringResize);
+        window.visualViewport.addEventListener('scroll', preservePanoramaPageDuringResize);
+      }
 
       function ensurePanoramaDOM() {
         const existing = Array.from(panoramaWrapper.querySelectorAll('img'));
@@ -1501,9 +1519,6 @@
         nextArchiveError.textContent = '';
       });
       nextArchiveCancelBtn.addEventListener('click', closeNextArchiveDialog);
-      nextArchiveDialog.addEventListener('click', function (e) {
-        if (e.target === nextArchiveDialog) closeNextArchiveDialog();
-      });
       nextArchiveLoadBtn.addEventListener('click', async function () {
         const file = nextArchiveFileInput.files && nextArchiveFileInput.files[0];
         if (!file) return;
@@ -1512,7 +1527,7 @@
         nextArchiveFileInput.disabled = true;
         nextArchiveError.textContent = '書庫を展開しています...';
         document.getElementById('errorContainer').textContent = '';
-        const loaded = await loadArchiveFile(file);
+        const loaded = await loadArchiveFile(file, true);
         if (loaded) {
           closeNextArchiveDialog();
         } else {
@@ -1575,25 +1590,65 @@
 
       // touch swipe
       let touchStartX = null;
+      let touchStartY = null;
+      let touchStartedAtPanoramaEnd = false;
+      function suppressSyntheticViewerClick() {
+        ignoreNextViewerClick = true;
+        if (viewerClickSuppressionTimer) clearTimeout(viewerClickSuppressionTimer);
+        viewerClickSuppressionTimer = setTimeout(function () {
+          ignoreNextViewerClick = false;
+          viewerClickSuppressionTimer = null;
+        }, 500);
+      }
+
+      function isAtPanoramaForwardEdge() {
+        const lastImage = panoramaWrapper.querySelector(`img[data-index="${images.length - 1}"]`);
+        if (!lastImage || !images.length) return false;
+        const imageRect = lastImage.getBoundingClientRect();
+        const wrapperRect = panoramaWrapper.getBoundingClientRect();
+        return dirRight.checked
+          ? imageRect.left <= wrapperRect.left + 12
+          : imageRect.right >= wrapperRect.right - 12;
+      }
+
       viewerOverlay.addEventListener('touchstart', function (e) {
-        // タッチ開始の X を記録（パノラマ時も記録しておく）
         touchStartX = e.changedTouches[0].clientX;
+        touchStartY = e.changedTouches[0].clientY;
+        touchStartedAtPanoramaEnd = panoramaSwitch.checked
+          && (idx >= images.length - 1 || isAtPanoramaForwardEdge());
+        ignoreNextViewerClick = false;
+        if (viewerClickSuppressionTimer) clearTimeout(viewerClickSuppressionTimer);
+      }, { passive: true });
+
+      viewerOverlay.addEventListener('touchmove', function (e) {
+        if (touchStartX == null || touchStartY == null) return;
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        const dy = e.changedTouches[0].clientY - touchStartY;
+        if (Math.hypot(dx, dy) > 12) suppressSyntheticViewerClick();
       }, { passive: true });
 
       viewerOverlay.addEventListener('touchend', function (e) {
-        if (touchStartX == null) return;
+        if (touchStartX == null || touchStartY == null) return;
         const dx = e.changedTouches[0].clientX - touchStartX;
+        const dy = e.changedTouches[0].clientY - touchStartY;
+        if (Math.hypot(dx, dy) > 12) suppressSyntheticViewerClick();
 
-        // ★ パノラマモードなら「スワイプでの prev/next を行わない」
-        //    （パノラマは自由スクロールが優先）
+        const isHorizontalSwipe = Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.2;
         if (panoramaSwitch.checked) {
+          const forwardSwipe = isHorizontalSwipe && (dirRight.checked ? dx > 0 : dx < 0);
+          if (forwardSwipe && touchStartedAtPanoramaEnd) {
+            idx = images.length - 1;
+            updatePageIndicator();
+            next();
+          }
           touchStartX = null;
-          // ※ スクロールで idx は scroll イベントで更新されるのでここでは何もしない
+          touchStartY = null;
+          touchStartedAtPanoramaEnd = false;
           return;
         }
 
         // パノラマでなければ（通常の単ページ／見開き）スワイプでページ操作
-        if (Math.abs(dx) > 40) {
+        if (isHorizontalSwipe) {
           if (dirRight.checked) {
             // 右開き: スワイプ左で prev、右で next （既存の仕様を維持）
             if (dx < 0) prev();
@@ -1606,6 +1661,14 @@
         }
 
         touchStartX = null;
+        touchStartY = null;
+        touchStartedAtPanoramaEnd = false;
+      }, { passive: true });
+
+      viewerOverlay.addEventListener('touchcancel', function () {
+        touchStartX = null;
+        touchStartY = null;
+        touchStartedAtPanoramaEnd = false;
       }, { passive: true });
 
       // Menu panel
@@ -1691,7 +1754,7 @@
         }
         if (panoramaProgrammaticUnlockTimer) clearTimeout(panoramaProgrammaticUnlockTimer);
         isProgrammaticScroll = true;
-        target.scrollIntoView({ behavior: behavior, inline: 'center' });
+        target.scrollIntoView({ behavior: behavior, block: 'nearest', inline: 'center' });
         panoramaProgrammaticUnlockTimer = setTimeout(function () {
           isProgrammaticScroll = false;
           panoramaProgrammaticUnlockTimer = null;
