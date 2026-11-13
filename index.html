@@ -908,7 +908,7 @@
         }
       }
 
-      async function extractImageUrlFromPage(pageUrl) {
+      async function extractImageUrlFromPage(pageUrl, onTitleFound) {
         let page;
         try {
           page = new URL(pageUrl);
@@ -919,22 +919,56 @@
           throw new Error('http または https のURLを入力してください。');
         }
 
-        let response;
-        try {
-          response = await fetch(page.href);
-        } catch (error) {
-          throw new Error('ページを取得できませんでした。CORS設定や通信制限を確認してください。');
-        }
-        if (!response.ok) throw new Error(`ページ取得失敗: HTTP ${response.status}`);
+        // タイトルは入力された作品ページから取得し、画像は末尾に「1/」を付けたページから取得する。
+        const firstPage = new URL(page.href);
+        firstPage.pathname = `${firstPage.pathname.replace(/\/+$/, '')}/1/`;
 
-        const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+        const getDocument = async function (url) {
+          const response = await fetch(url.href);
+          if (!response.ok) throw new Error(`ページ取得失敗: HTTP ${response.status}`);
+          return new DOMParser().parseFromString(await response.text(), 'text/html');
+        };
+
+        let titleDocument = null;
+        try {
+          titleDocument = await getDocument(page);
+        } catch (error) {
+          // 作品ページの取得に失敗しても、画像ページからタイトルを探して続行する。
+        }
+
+        const getPageTitle = function (doc) {
+          if (!doc) return '';
+          const titleElement = doc.querySelector('h2.title.svelte-iec8wt')
+            || doc.querySelector('h1.title .pretty')
+            || doc.querySelector('h1.title')
+            || doc.querySelector('h2.title')
+            || doc.querySelector('meta[property="og:title"]');
+          const title = titleElement
+            ? (titleElement.tagName === 'META' ? titleElement.content : titleElement.textContent).trim()
+            : '';
+          return title || (doc.title || '').replace(/\s*[»|]\s*nhentai.*$/i, '').trim();
+        };
+        let title = getPageTitle(titleDocument);
+        if (title && onTitleFound) onTitleFound(title);
+
+        let doc;
+        try {
+          doc = await getDocument(firstPage);
+        } catch (error) {
+          throw new Error(error.message || 'ページを取得できませんでした。CORS設定や通信制限を確認してください。');
+        }
+        if (!title) {
+          title = getPageTitle(doc);
+          if (title && onTitleFound) onTitleFound(title);
+        }
+
         const container = doc.querySelector('section#image-container');
         if (!container) throw new Error('ページ内に画像一覧が見つかりません。');
         const image = Array.from(container.querySelectorAll('img[src], img[data-src]')).find(element =>
           element.getAttribute('src') || element.getAttribute('data-src')
         );
         if (!image) throw new Error('ページ内に画像が見つかりません。');
-        const imageUrl = new URL(image.getAttribute('src') || image.getAttribute('data-src'), page.href);
+        const imageUrl = new URL(image.getAttribute('src') || image.getAttribute('data-src'), firstPage.href);
         if (!isDirectImageUrl(imageUrl.href)) throw new Error('対応していない画像形式です。');
         return imageUrl;
       }
@@ -948,10 +982,10 @@
         });
       }
 
-      async function loadUrlComicImages(inputUrl, onImageFound) {
+      async function loadUrlComicImages(inputUrl, onImageFound, onTitleFound) {
         const firstImageUrl = isDirectImageUrl(inputUrl)
           ? new URL(inputUrl)
-          : await extractImageUrlFromPage(inputUrl);
+          : await extractImageUrlFromPage(inputUrl, onTitleFound);
         const pathMatch = firstImageUrl.pathname.match(/^(.*?)(\d+)(\.[^./]+)$/);
         if (!pathMatch) {
           if (!(await probeImage(firstImageUrl))) throw new Error('指定された画像を読み込めませんでした。');
@@ -1044,6 +1078,8 @@
               renderViewer(false);
               drainPendingUrlNext();
             }
+          }, function (title) {
+            syncUrlTitleInputs(title);
           });
           urlComicLoading = false;
           pendingUrlNext = 0;
