@@ -797,6 +797,120 @@
         font-size: 20px;
       }
     }
+
+    /* Shared reader and next-volume dialog controls */
+    .viewerBtn, .fixedBtn {
+      border: 1px solid #e4dcc8;
+      border-radius: 12px;
+      color: #383a3d;
+      background: rgba(250, 249, 246, 0.94);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    }
+    .viewerBtn { font-size: 15px; font-weight: 600; }
+    .fixedBtn { background: rgba(250, 249, 246, 0.94); }
+    #readerLoadingStatus {
+      border-color: #e4dcc8;
+      border-radius: 12px;
+      color: #383a3d;
+      background: rgba(250, 249, 246, 0.96);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+    }
+    #pageSlider::-webkit-slider-runnable-track { background: rgba(250, 249, 246, 0.78); }
+    #pageSlider::-moz-range-track { background: rgba(250, 249, 246, 0.78); }
+
+    #nextArchiveDialog { background: rgba(31, 29, 25, 0.55); }
+    #nextArchiveDialog .nextArchiveCard {
+      border-color: #e5e2dc;
+      border-radius: 18px;
+      color: #383a3d;
+      background: #fffefa;
+      box-shadow: 0 18px 55px rgba(47, 42, 32, 0.2);
+    }
+    #nextArchiveDialog .nextArchiveCard h2 { font-size: 19px; }
+    #nextArchiveFileInput {
+      min-height: 48px;
+      border-color: #d9d6d0;
+      border-radius: 11px;
+      color: #383a3d;
+      background: #fff;
+      font: inherit;
+      font-size: 15px;
+    }
+    #nextArchiveDialog .nextArchiveActions .viewerBtn { min-height: 46px; }
+    #nextArchiveDialog #nextArchiveCancelBtn {
+      border-color: #dedbd5;
+      color: #55565a;
+      background: #f1efeb;
+    }
+    #nextArchiveDialog #nextArchiveLoadBtn {
+      border: 0;
+      color: #303236;
+      background: linear-gradient(105deg, #f4d17b, #f0c45f);
+    }
+
+    @media (max-width: 600px) {
+      .appHeader { height: 62px; gap: 9px; padding: 0 14px; }
+      .brandMark svg { width: 34px; height: 34px; }
+      .appHeader h1 { font-size: 15px; letter-spacing: 0.015em; }
+      #historyBtn { min-width: 58px; min-height: 34px; padding: 5px 11px; font-size: 13px; }
+
+      #archiveHome { padding: 78px 16px 20px; }
+      .sourceTabs { margin-bottom: 20px; padding: 5px; }
+      .sourceTab { min-height: 44px; border-radius: 26px; font-size: 15px; }
+      .filePicker { min-height: 132px; gap: 5px; border-radius: 18px; }
+      .filePicker svg { width: 46px; height: 40px; }
+      .filePicker strong { font-size: 18px; }
+      .filePicker span { font-size: 13px; }
+      #openArchiveBtn, #loadUrlComicBtn {
+        min-height: 52px;
+        margin-top: 18px;
+        border-radius: 28px;
+        font-size: 17px;
+      }
+      .sourcePanel label:not(.filePicker) { margin: 13px 0 7px; font-size: 14px; }
+      .sourcePanel input[type="url"],
+      .sourcePanel input[type="text"] {
+        min-height: 46px;
+        padding: 9px 11px;
+        font-size: 15px;
+      }
+
+      #nextArchiveDialog { padding: 16px; }
+      #nextArchiveDialog .nextArchiveCard { padding: 16px; border-radius: 16px; }
+      #nextArchiveDialog .nextArchiveCard h2 { margin-bottom: 12px; font-size: 17px; }
+      #nextArchiveDialog .nextArchiveCard label { margin-bottom: 7px; font-size: 14px; }
+      #nextArchiveFileInput { min-height: 44px; padding: 8px; font-size: 13px; }
+      #nextArchiveError { min-height: 1.2em; margin: 8px 0 0; font-size: 12px; }
+      .nextArchiveActions { gap: 7px; margin-top: 10px; }
+      #nextArchiveDialog .nextArchiveActions .viewerBtn { min-height: 42px; padding: 8px 10px; font-size: 13px; }
+
+      .viewerControls { bottom: calc(6px + env(safe-area-inset-bottom)); gap: 5px; }
+      .viewerNavButtons { gap: 6px; }
+      .viewerBtn { padding: 8px 11px; border-radius: 11px; font-size: 13px; }
+      .fixedBtn {
+        top: calc(8px + env(safe-area-inset-top));
+        min-height: 34px;
+        padding: 6px 9px;
+        border-radius: 11px;
+        font-size: 13px;
+      }
+      #pageSlider { height: 20px; }
+      #pageSlider::-webkit-slider-runnable-track { height: 3px; }
+      #pageSlider::-webkit-slider-thumb { width: 14px; height: 14px; margin-top: -5.5px; }
+      #pageSlider::-moz-range-track { height: 3px; }
+      #pageSlider::-moz-range-thumb { width: 14px; height: 14px; }
+      #readerLoadingStatus {
+        right: calc(8px + env(safe-area-inset-right));
+        bottom: calc(40px + env(safe-area-inset-bottom));
+        min-height: 34px;
+        padding: 7px 11px;
+        border-radius: 11px;
+        font-size: 13px;
+      }
+      #menuPanel { width: min(360px, calc(100vw - 28px)); padding: 15px; border-radius: 16px; }
+      .menuRow { margin: 10px 0; font-size: 14px; }
+      #menuPanel .viewerBtn { padding: 8px 12px; font-size: 13px; }
+    }
   </style>
 </head>
 
