@@ -693,6 +693,32 @@
       color: #303236;
       background: linear-gradient(105deg, #f4d17b, #f0c45f);
     }
+    #nextArchiveDialog #nextArchiveCancelBtn,
+    #nextArchiveDialog #nextArchiveLoadBtn,
+    #nextUrlDialog #nextUrlCancelBtn,
+    #nextUrlDialog #nextUrlLoadBtn {
+      border: 0;
+      border-radius: 12px;
+      color: #303236;
+      background: linear-gradient(105deg, #f4d17b, #f0c45f);
+      font-size: 15px;
+      font-weight: 600;
+    }
+    #nextUrlDialog { position: fixed; inset: 0; z-index: 12000; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(31, 29, 25, 0.55); }
+    #nextUrlDialog[hidden] { display: none; }
+    #nextUrlDialog .nextArchiveCard { border-color: #e5e2dc; border-radius: 18px; color: #383a3d; background: #fffefa; box-shadow: 0 18px 55px rgba(47, 42, 32, 0.2); }
+    #nextUrlTitle { margin: 0 0 14px; font-size: 19px; }
+    #nextUrlPreview { margin: 0; padding: 10px 12px; border: 1px solid #e5e2dc; border-radius: 10px; color: #777671; background: #faf9f6; font-size: 13px; overflow-wrap: anywhere; }
+    #nextUrlError { min-height: 1.3em; margin: 9px 0 0; color: #a1493e; font-size: 13px; }
+    #nextUrlDialog .nextArchiveActions .viewerBtn { min-height: 46px; }
+    #nextArchiveDialog #nextArchiveCancelBtn,
+    #nextArchiveDialog #nextArchiveLoadBtn {
+      border: 0;
+      border-radius: 12px;
+      color: #303236;
+      background: linear-gradient(105deg, #f4d17b, #f0c45f);
+      font-weight: 600;
+    }
     #nextArchiveDialog #nextArchiveCancelBtn {
       border-color: #dedbd5;
       color: #55565a;
@@ -883,6 +909,16 @@
       #nextArchiveError { min-height: 1.2em; margin: 8px 0 0; font-size: 12px; }
       .nextArchiveActions { gap: 7px; margin-top: 10px; }
       #nextArchiveDialog .nextArchiveActions .viewerBtn { min-height: 42px; padding: 8px 10px; font-size: 13px; }
+      #nextArchiveDialog #nextArchiveCancelBtn,
+      #nextArchiveDialog #nextArchiveLoadBtn,
+      #nextUrlDialog #nextUrlCancelBtn,
+      #nextUrlDialog #nextUrlLoadBtn { font-size: 13px; }
+      #nextUrlDialog { padding: 16px; }
+      #nextUrlDialog .nextArchiveCard { padding: 16px; border-radius: 16px; }
+      #nextUrlTitle { margin-bottom: 12px; font-size: 17px; }
+      #nextUrlPreview { padding: 8px 10px; font-size: 12px; }
+      #nextUrlError { min-height: 1.2em; margin-top: 8px; font-size: 12px; }
+      #nextUrlDialog .nextArchiveActions .viewerBtn { min-height: 42px; padding: 8px 10px; }
 
       .viewerControls { bottom: calc(6px + env(safe-area-inset-bottom)); gap: 5px; }
       .viewerNavButtons { gap: 6px; }
@@ -942,14 +978,14 @@
           <span>ZIP / RAR</span>
         </label>
         <input class="visuallyHiddenInput" type="file" id="archiveFileInput" accept=".zip,.rar,application/zip,application/vnd.rar">
-        <button id="openArchiveBtn" type="button">読み込む</button>
+        <button id="openArchiveBtn" type="button">読み込み</button>
       </section>
       <section class="sourcePanel" id="urlSourcePanel" role="tabpanel" aria-labelledby="urlModeTab" hidden>
         <label for="textInput">画像URL / 作品ページURL</label>
         <input type="url" id="textInput" inputmode="url" placeholder="https://example.com/page001.jpg" autocomplete="url">
         <label for="zipFileNameInput">タイトル / ZIPファイル名（任意）</label>
         <input type="text" id="zipFileNameInput" placeholder="作品名" autocomplete="off">
-        <button id="loadUrlComicBtn" type="button">読み込んで読む</button>
+        <button id="loadUrlComicBtn" type="button">読み込み</button>
       </section>
       <div id="errorContainer" role="status" aria-live="polite"></div>
     </section>
@@ -989,7 +1025,19 @@
       <p id="nextArchiveError" role="status" aria-live="polite"></p>
       <div class="nextArchiveActions">
         <button id="nextArchiveCancelBtn" class="viewerBtn" type="button">キャンセル</button>
-        <button id="nextArchiveLoadBtn" class="viewerBtn" type="button" disabled>読み込んで読む</button>
+        <button id="nextArchiveLoadBtn" class="viewerBtn" type="button" disabled>読み込み</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="nextUrlDialog" hidden role="dialog" aria-modal="true" aria-labelledby="nextUrlTitle">
+    <div class="nextArchiveCard">
+      <h2 id="nextUrlTitle">次の話を読みますか？</h2>
+      <p id="nextUrlPreview"></p>
+      <p id="nextUrlError" role="status" aria-live="polite"></p>
+      <div class="nextArchiveActions">
+        <button id="nextUrlCancelBtn" class="viewerBtn" type="button">キャンセル</button>
+        <button id="nextUrlLoadBtn" class="viewerBtn" type="button">読み込み</button>
       </div>
     </div>
   </div>
@@ -1091,6 +1139,12 @@
       const nextArchiveError = document.getElementById('nextArchiveError');
       const nextArchiveCancelBtn = document.getElementById('nextArchiveCancelBtn');
       const nextArchiveLoadBtn = document.getElementById('nextArchiveLoadBtn');
+      const nextUrlDialog = document.getElementById('nextUrlDialog');
+      const nextUrlPreview = document.getElementById('nextUrlPreview');
+      const nextUrlError = document.getElementById('nextUrlError');
+      const nextUrlCancelBtn = document.getElementById('nextUrlCancelBtn');
+      const nextUrlLoadBtn = document.getElementById('nextUrlLoadBtn');
+      let nextUrlFirstImageUrl = '';
       const archiveSourcePanel = document.getElementById('archiveSourcePanel');
       const urlSourcePanel = document.getElementById('urlSourcePanel');
       const sharedUrl = new URLSearchParams(window.location.search).get('url');
@@ -1152,11 +1206,10 @@
       }
 
       function updateSourceButtonLabels() {
-        const file = archiveFileInput.files && archiveFileInput.files[0];
-        openArchiveBtn.textContent = canReuseLoadedArchive(file) ? '読む' : '読み込む';
+        openArchiveBtn.textContent = '読み込み';
         const canReopenUrl = loadedComic && loadedComic.source === 'url'
           && urlInput.value.trim() === loadedComic.inputUrl;
-        loadUrlComicBtn.textContent = canReopenUrl ? '読む' : '読み込む';
+        loadUrlComicBtn.textContent = '読み込み';
         if (urlComicLoading) loadUrlComicBtn.disabled = !canReopenUrl;
       }
 
@@ -1510,10 +1563,12 @@
         });
       }
 
-      async function loadUrlComicImages(inputUrl, onImageFound, onTitleFound) {
-        const firstImageUrl = isDirectImageUrl(inputUrl)
-          ? new URL(inputUrl)
-          : await extractImageUrlFromPage(inputUrl, onTitleFound);
+      async function loadUrlComicImages(inputUrl, onImageFound, onTitleFound, firstImageUrlOverride = null) {
+        const firstImageUrl = firstImageUrlOverride
+          ? new URL(firstImageUrlOverride)
+          : isDirectImageUrl(inputUrl)
+            ? new URL(inputUrl)
+            : await extractImageUrlFromPage(inputUrl, onTitleFound);
         const pathMatch = firstImageUrl.pathname.match(/^(.*?)(\d+)(\.[^./]+)$/);
         if (!pathMatch) {
           if (!(await probeImage(firstImageUrl))) throw new Error('指定された画像を読み込めませんでした。');
@@ -1558,26 +1613,14 @@
         return loadedCount;
       }
 
-      loadUrlComicBtn.addEventListener('click', async function () {
-        const inputUrl = urlInput.value.trim();
-        if (!inputUrl) {
-          document.getElementById('errorContainer').textContent = '画像URLを入力してください。';
-          return;
-        }
-
-        if (loadedComic && loadedComic.source === 'url'
-          && inputUrl === loadedComic.inputUrl && images.length) {
-          urlComicTitle = urlTitleInput.value.trim();
-          openViewer();
-          return;
-        }
-
+      async function startUrlComicLoad(inputUrl, firstImageUrlOverride = null, onFirstImageLoaded = null) {
         setSourceLoading(true);
         urlComicLoading = true;
         pendingUrlNext = 0;
         document.getElementById('errorContainer').textContent = '画像URLを確認しています...';
         showReaderStatus('画像読込中...');
         let readerOpened = false;
+        let loadSucceeded = false;
         try {
           await loadUrlComicImages(inputUrl, function (imageUrl, loadedCount) {
             if (!readerOpened) {
@@ -1587,7 +1630,7 @@
               activeArchivePageNames = [];
               activeSource = 'url';
               urlComicTitle = urlTitleInput.value.trim();
-              loadedComic = { source: 'url', inputUrl };
+              loadedComic = { source: 'url', inputUrl, firstImageUrl: imageUrl };
               menuDownloadBtn.style.display = 'inline-block';
               menuDownloadBtn.disabled = true;
               menuDownloadBtn.textContent = '読み込み中...';
@@ -1602,13 +1645,15 @@
             showReaderStatus(`画像読込 ${loadedCount}枚`);
             if (loadedCount === 1) {
               openViewer();
+              if (onFirstImageLoaded) onFirstImageLoaded();
             } else if (viewerOverlay.getAttribute('aria-hidden') !== 'true') {
               renderViewer(false);
               drainPendingUrlNext();
             }
           }, function (title) {
             syncUrlTitleInputs(title);
-          });
+          }, firstImageUrlOverride);
+          loadSucceeded = true;
           urlComicLoading = false;
           pendingUrlNext = 0;
           document.getElementById('errorContainer').textContent = `${urlComicTitle || 'URL画像'} を ${images.length} 枚読み込みました。`;
@@ -1630,6 +1675,24 @@
           setSourceLoading(false);
           updateSourceButtonLabels();
         }
+        return loadSucceeded;
+      }
+
+      loadUrlComicBtn.addEventListener('click', async function () {
+        const inputUrl = urlInput.value.trim();
+        if (!inputUrl) {
+          document.getElementById('errorContainer').textContent = '画像URLを入力してください。';
+          return;
+        }
+
+        if (loadedComic && loadedComic.source === 'url'
+          && inputUrl === loadedComic.inputUrl && images.length) {
+          urlComicTitle = urlTitleInput.value.trim();
+          openViewer();
+          return;
+        }
+
+        await startUrlComicLoad(inputUrl);
       });
 
       async function loadArchiveFile(file, fromNextDialog = false) {
@@ -2064,6 +2127,61 @@
         nextArchiveFileInput.focus();
       }
 
+      function getNextUrlEpisodeFirstImageUrl() {
+        if (!loadedComic || loadedComic.source !== 'url' || !images.length) return '';
+        try {
+          const firstImage = new URL(loadedComic.firstImageUrl || images[0]);
+          const match = firstImage.pathname.match(/^(.*\/)(\d+)\/(\d+)(\.[^./]+)$/);
+          if (!match) return '';
+          const [, prefix, episodeDigits, pageDigits, extension] = match;
+          const episode = Number(episodeDigits);
+          if (!Number.isSafeInteger(episode)) return '';
+          firstImage.pathname = `${prefix}${String(episode + 1).padStart(episodeDigits.length, '0')}/${pageDigits}${extension}`;
+          return firstImage.href;
+        } catch (error) {
+          return '';
+        }
+      }
+
+      function openNextUrlDialog() {
+        nextUrlFirstImageUrl = getNextUrlEpisodeFirstImageUrl();
+        if (!nextUrlFirstImageUrl) return false;
+        nextUrlPreview.textContent = nextUrlFirstImageUrl;
+        nextUrlError.textContent = '';
+        nextUrlLoadBtn.disabled = false;
+        nextUrlCancelBtn.disabled = false;
+        nextUrlDialog.hidden = false;
+        return true;
+      }
+
+      function closeNextUrlDialog() {
+        nextUrlDialog.hidden = true;
+        nextUrlFirstImageUrl = '';
+        nextUrlError.textContent = '';
+        nextUrlLoadBtn.disabled = false;
+        nextUrlCancelBtn.disabled = false;
+      }
+
+      nextUrlCancelBtn.addEventListener('click', closeNextUrlDialog);
+      nextUrlDialog.addEventListener('click', function (event) {
+        if (event.target === nextUrlDialog) closeNextUrlDialog();
+      });
+      nextUrlLoadBtn.addEventListener('click', async function () {
+        if (!nextUrlFirstImageUrl || !loadedComic || loadedComic.source !== 'url') return;
+        const inputUrl = loadedComic.inputUrl;
+        nextUrlLoadBtn.disabled = true;
+        nextUrlCancelBtn.disabled = true;
+        nextUrlError.textContent = '画像を読み込み中...';
+        const loaded = await startUrlComicLoad(inputUrl, nextUrlFirstImageUrl, closeNextUrlDialog);
+        if (loaded) {
+          closeNextUrlDialog();
+        } else {
+          nextUrlError.textContent = document.getElementById('errorContainer').textContent || '画像を読み込めませんでした。';
+          nextUrlLoadBtn.disabled = false;
+          nextUrlCancelBtn.disabled = false;
+        }
+      });
+
       function closeNextArchiveDialog() {
         nextArchiveDialog.hidden = true;
         nextArchiveFileInput.disabled = false;
@@ -2080,6 +2198,9 @@
         if (!canAdvanceNext()) {
           if (urlComicLoading) {
             pendingUrlNext = Math.min(pendingUrlNext + 1, 50);
+          } else if (loadedComic && loadedComic.source === 'url' && images.length
+            && viewerOverlay.getAttribute('aria-hidden') !== 'true') {
+            openNextUrlDialog();
           } else if (loadedComic && loadedComic.source === 'archive' && images.length
             && viewerOverlay.getAttribute('aria-hidden') !== 'true') {
             clearArchiveProgress();
@@ -2192,6 +2313,11 @@
       });
       // keyboard
       document.addEventListener('keydown', function (e) {
+        if (!nextUrlDialog.hidden && e.key === 'Escape') {
+          closeNextUrlDialog();
+          e.stopPropagation();
+          return;
+        }
         if (!readingHistoryDialog.hidden && e.key === 'Escape') {
           closeArchiveHistory();
           e.stopPropagation();
