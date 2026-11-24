@@ -1401,12 +1401,35 @@
         localStorage.setItem(urlBookmarkStorageKey, JSON.stringify(bookmarks.slice(0, 10)));
       }
 
+      function getBookmarkUrlWithoutEpisodeNumber(value) {
+        try {
+          const parsed = new URL(value);
+          const match = parsed.pathname.match(/\/(\d+)\/(\d+\.[^/]+)$/);
+          if (!match) return null;
+          const normalizedPath = parsed.pathname.replace(/\/\d+(?=\/\d+\.[^/]+$)/, '/{episode}');
+          return `${parsed.origin}${normalizedPath}${parsed.search}${parsed.hash}`;
+        } catch (error) {
+          return null;
+        }
+      }
+
+      function normalizeBookmarkTitle(value) {
+        return typeof value === 'string' ? value.normalize('NFKC').trim().toLocaleLowerCase('ja-JP') : '';
+      }
+
       function saveCurrentUrlBookmark() {
         if (!loadedComic || loadedComic.source !== 'url') return;
         const url = loadedComic.firstImageUrl || urlInput.value.trim();
         if (!url) return;
         const title = readerZipNameInput.value.trim() || urlTitleInput.value.trim() || urlComicTitle || '';
-        const bookmarks = getUrlBookmarks().filter(item => item.url !== url);
+        const normalizedUrl = getBookmarkUrlWithoutEpisodeNumber(url);
+        const normalizedTitle = normalizeBookmarkTitle(title);
+        const bookmarks = getUrlBookmarks().filter(item => {
+          if (item.url === url) return false;
+          if (!normalizedUrl || !normalizedTitle) return true;
+          return getBookmarkUrlWithoutEpisodeNumber(item.url) !== normalizedUrl
+            || normalizeBookmarkTitle(item.title) !== normalizedTitle;
+        });
         bookmarks.unshift({ url, title, savedAt: Date.now() });
         try {
           writeUrlBookmarks(bookmarks);
