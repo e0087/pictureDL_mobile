@@ -370,7 +370,7 @@
       z-index: 11000;
     }
 
-    #menuPanel h3 { margin: 0 0 14px; font-size: 17px; }
+    #menuPanel h3 { margin: 0 40px 14px 0; font-size: 17px; }
 
     #nextArchiveDialog {
       position: fixed;
@@ -563,7 +563,7 @@
       letter-spacing: 0.025em;
     }
 
-    #historyBtn {
+    #historyBtn, #bookmarksBtn {
       display: grid;
       min-width: 74px;
       min-height: 42px;
@@ -579,7 +579,7 @@
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
     }
-    #historyBtn[hidden] { display: none; }
+    #historyBtn[hidden], #bookmarksBtn[hidden] { display: none; }
 
     #archiveHome {
       min-height: 100vh;
@@ -724,6 +724,13 @@
       color: #55565a;
       background: #f1efeb;
     }
+    #nextArchiveDialog #nextArchiveCancelBtn.viewerBtn,
+    #nextUrlDialog #nextUrlCancelBtn.viewerBtn {
+      border: 1px solid #dedbd5;
+      color: #55565a;
+      background: #f1efeb;
+    }
+    #menuPanel #menuCloseBtn { position: absolute; top: 12px; right: 12px; border: 1px solid #dedbd5; color: #55565a; background: #f1efeb; }
     #readingHistoryDialog {
       position: fixed;
       inset: 0;
@@ -747,7 +754,7 @@
       background: #fffefa;
       box-shadow: 0 18px 55px rgba(47, 42, 32, 0.2);
     }
-    .historyHeader, .historyFooter {
+    .historyHeader {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -768,17 +775,32 @@
     #historyList { overflow-y: auto; overscroll-behavior: contain; }
     .historyEntry {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-columns: 38px minmax(0, 1fr) auto;
       align-items: center;
       gap: 12px;
       padding: 14px 0;
       border-top: 1px solid #ece9e3;
     }
+    .historyEntryNumber { display: grid; width: 30px; height: 30px; place-items: center; justify-self: center; border-radius: 50%; color: #705b25; background: #f3ebd5; font-size: 13px; }
     .historyEntryInfo { min-width: 0; display: grid; gap: 4px; }
     .historyEntryInfo strong { overflow-wrap: anywhere; font-size: 16px; }
     .historyEntryInfo span, .historyEntryInfo small { color: #777671; line-height: 1.45; }
     .historyEntryInfo small { overflow-wrap: anywhere; }
-    .historyDeleteBtn, #clearHistoryBtn {
+    .menuFooter { justify-content: space-between; }
+    .menuFooterActions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-left: auto; }
+    #bookmarkSaveBtn[hidden] { display: none; }
+    #menuPanel #bookmarkSaveBtn:not([hidden]) {
+      border: 1px solid #dfcf9e;
+      color: #66562c;
+      background: #f3ebd5;
+    }
+    #bookmarkDialog { position: fixed; inset: 0; z-index: 12002; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(32, 30, 26, 0.48); }
+    #bookmarkDialog[hidden] { display: none; }
+    .bookmarkEntry { cursor: pointer; }
+    .bookmarkEntry:hover, .bookmarkEntry:focus-visible { background: #faf6e9; outline: none; }
+    .bookmarkEntryActions { display: flex; align-items: center; gap: 6px; }
+    .bookmarkRemoveBtn { min-height: 38px; padding: 7px 10px; border: 1px solid #dedbd5; border-radius: 9px; color: #55565a; background: #f1efeb; font: inherit; cursor: pointer; }
+    .historyDeleteBtn {
       min-height: 38px;
       padding: 7px 12px;
       border: 1px solid #dedbd5;
@@ -788,13 +810,6 @@
       font: inherit;
       cursor: pointer;
     }
-    .historyFooter {
-      justify-content: flex-end;
-      margin-top: 12px;
-      padding-top: 14px;
-      border-top: 1px solid #ece9e3;
-    }
-    #clearHistoryBtn { margin-right: auto; color: #984b40; }
     #historyEmpty { margin: 22px 0; color: #777671; text-align: center; }
     .chip {
       border-color: #dfdcd5;
@@ -807,7 +822,7 @@
       .appHeader { height: 76px; gap: 12px; padding: 0 18px; }
       .brandMark svg { width: 42px; height: 42px; }
       .appHeader h1 { font-size: 19px; }
-      #historyBtn { min-width: 66px; min-height: 38px; padding: 6px 14px; font-size: 14px; }
+      #historyBtn, #bookmarksBtn { min-width: 66px; min-height: 38px; padding: 6px 14px; font-size: 14px; }
       #archiveHome { padding: 96px 18px 24px; }
       .archiveCard { padding: 0; }
       .sourceTabs { margin-bottom: 26px; }
@@ -878,7 +893,10 @@
       .appHeader { height: 62px; gap: 9px; padding: 0 14px; }
       .brandMark svg { width: 34px; height: 34px; }
       .appHeader h1 { font-size: 15px; letter-spacing: 0.015em; }
-      #historyBtn { min-width: 58px; min-height: 34px; padding: 5px 11px; font-size: 13px; }
+      #historyBtn, #bookmarksBtn { min-width: 58px; min-height: 34px; padding: 5px 11px; font-size: 13px; }
+      .menuFooterActions { gap: 6px; }
+      .menuFooterActions .viewerBtn { min-width: 0; padding: 8px 10px; font-size: 12px; }
+      .bookmarkRemoveBtn { min-height: 34px; padding: 6px 8px; font-size: 12px; }
 
       #archiveHome { padding: 78px 16px 20px; }
       .sourceTabs { margin-bottom: 20px; padding: 5px; }
@@ -961,6 +979,7 @@
     </div>
     <h1 id="appTitle">WEB COMIC READER</h1>
     <button id="historyBtn" type="button" aria-label="履歴を表示">履歴</button>
+    <button id="bookmarksBtn" type="button" aria-label="ブックマークを表示" hidden>ブックマーク</button>
   </header>
   <main id="archiveHome">
     <section class="archiveCard" aria-labelledby="appTitle">
@@ -1050,15 +1069,23 @@
       </header>
       <div id="historyList"></div>
       <p id="historyEmpty" hidden>履歴はありません。</p>
-      <footer class="historyFooter">
-        <button id="clearHistoryBtn" type="button">すべて削除</button>
-        <button id="historyFooterCloseBtn" class="historyDeleteBtn" type="button">閉じる</button>
-      </footer>
+    </section>
+  </div>
+
+  <div id="bookmarkDialog" hidden role="dialog" aria-modal="true" aria-labelledby="bookmarkDialogTitle">
+    <section class="historyCard">
+      <header class="historyHeader">
+        <h2 id="bookmarkDialogTitle">ブックマーク</h2>
+        <button id="bookmarkDialogCloseBtn" class="historyCloseBtn" type="button" aria-label="閉じる">×</button>
+      </header>
+      <div id="bookmarkList"></div>
+      <p id="bookmarkEmpty" hidden>ブックマークはありません。</p>
     </section>
   </div>
 
   <!-- Menu panel (modal) -->
   <div id="menuPanel" role="dialog" aria-modal="true" aria-hidden="true">
+    <button class="historyCloseBtn" id="menuCloseBtn" type="button" aria-label="閉じる">×</button>
     <h3>リーダー設定</h3>
     <div class="menuRow">
       <div>見開きモード</div>
@@ -1085,8 +1112,10 @@
       <input type="text" id="readerZipFileNameInput" placeholder="作品名" autocomplete="off">
     </div>
     <div class="menuFooter">
-      <button class="viewerBtn" id="menuDownloadBtn" type="button" style="display:none">ZIP保存</button>
-      <button class="viewerBtn" id="menuCloseBtn" type="button">閉じる</button>
+      <div class="menuFooterActions">
+        <button class="viewerBtn" id="bookmarkSaveBtn" type="button" hidden>ブックマーク</button>
+        <button class="viewerBtn" id="menuDownloadBtn" type="button" style="display:none">保存</button>
+      </div>
     </div>
   </div>
 
@@ -1130,10 +1159,14 @@
       const archiveModeTab = document.getElementById('archiveModeTab');
       const urlModeTab = document.getElementById('urlModeTab');
       const historyBtn = document.getElementById('historyBtn');
+      const bookmarksBtn = document.getElementById('bookmarksBtn');
+      const bookmarkSaveBtn = document.getElementById('bookmarkSaveBtn');
+      const bookmarkDialog = document.getElementById('bookmarkDialog');
+      const bookmarkList = document.getElementById('bookmarkList');
+      const bookmarkEmpty = document.getElementById('bookmarkEmpty');
       const readingHistoryDialog = document.getElementById('readingHistoryDialog');
       const historyList = document.getElementById('historyList');
       const historyEmpty = document.getElementById('historyEmpty');
-      const clearHistoryBtn = document.getElementById('clearHistoryBtn');
       const nextArchiveDialog = document.getElementById('nextArchiveDialog');
       const nextArchiveFileInput = document.getElementById('nextArchiveFileInput');
       const nextArchiveError = document.getElementById('nextArchiveError');
@@ -1159,11 +1192,14 @@
       let activeArchivePageNames = [];
       const archiveProgressStoragePrefix = 'pictureDL:reading-position:v3:';
       const manuallyDeletedArchiveProgressKeys = new Set();
+      const urlBookmarkStorageKey = 'pictureDL:url-bookmarks:v1';
+      let bookmarkSavedTimer = null;
 
       function setSourceMode(mode) {
         activeSource = mode;
         const showArchive = mode === 'archive';
         historyBtn.hidden = !showArchive;
+        bookmarksBtn.hidden = showArchive;
         archiveModeTab.setAttribute('aria-selected', String(showArchive));
         urlModeTab.setAttribute('aria-selected', String(!showArchive));
         archiveSourcePanel.hidden = !showArchive;
@@ -1276,15 +1312,29 @@
         return history.sort((a, b) => b.updatedAt - a.updatedAt);
       }
 
+      function pruneArchiveHistory() {
+        const history = getArchiveHistory();
+        history.slice(10).forEach(item => {
+          try {
+            localStorage.removeItem(item.key);
+          } catch (error) {
+            console.warn('古い読書履歴を整理できませんでした:', error);
+          }
+        });
+      }
+
       function renderArchiveHistory() {
+        pruneArchiveHistory();
         const history = getArchiveHistory();
         historyList.replaceChildren();
         historyEmpty.hidden = history.length > 0;
-        clearHistoryBtn.disabled = history.length === 0;
 
-        history.forEach(item => {
+        history.slice(0, 10).forEach((item, index) => {
           const row = document.createElement('article');
           row.className = 'historyEntry';
+          const number = document.createElement('span');
+          number.className = 'historyEntryNumber';
+          number.textContent = String(index + 1);
           const info = document.createElement('div');
           info.className = 'historyEntryInfo';
           const name = document.createElement('strong');
@@ -1317,7 +1367,7 @@
             }
             renderArchiveHistory();
           });
-          row.append(info, remove);
+          row.append(number, info, remove);
           historyList.appendChild(row);
         });
       }
@@ -1331,26 +1381,119 @@
         readingHistoryDialog.hidden = false;
       });
       document.getElementById('historyCloseBtn').addEventListener('click', closeArchiveHistory);
-      document.getElementById('historyFooterCloseBtn').addEventListener('click', closeArchiveHistory);
       readingHistoryDialog.addEventListener('click', function (event) {
         if (event.target === readingHistoryDialog) closeArchiveHistory();
       });
-      clearHistoryBtn.addEventListener('click', function () {
-        if (!window.confirm('保存した履歴をすべて削除しますか？')) return;
+      function getUrlBookmarks() {
         try {
-          const keys = [];
-          for (let index = 0; index < localStorage.length; index++) {
-            const key = localStorage.key(index);
-            if (key && key.startsWith(archiveProgressStoragePrefix)) keys.push(key);
-          }
-          keys.forEach(key => {
-            localStorage.removeItem(key);
-            manuallyDeletedArchiveProgressKeys.add(key);
-          });
+          const saved = JSON.parse(localStorage.getItem(urlBookmarkStorageKey) || '[]');
+          if (!Array.isArray(saved)) return [];
+          return saved.filter(item => item && typeof item.url === 'string' && item.url.trim())
+            .sort((a, b) => (Number(b.savedAt) || 0) - (Number(a.savedAt) || 0))
+            .slice(0, 10);
         } catch (error) {
-          console.warn('履歴を削除できませんでした:', error);
+          console.warn('ブックマークを読み込めませんでした:', error);
+          return [];
         }
-        renderArchiveHistory();
+      }
+
+      function writeUrlBookmarks(bookmarks) {
+        localStorage.setItem(urlBookmarkStorageKey, JSON.stringify(bookmarks.slice(0, 10)));
+      }
+
+      function saveCurrentUrlBookmark() {
+        if (!loadedComic || loadedComic.source !== 'url') return;
+        const url = loadedComic.firstImageUrl || urlInput.value.trim();
+        if (!url) return;
+        const title = readerZipNameInput.value.trim() || urlTitleInput.value.trim() || urlComicTitle || '';
+        const bookmarks = getUrlBookmarks().filter(item => item.url !== url);
+        bookmarks.unshift({ url, title, savedAt: Date.now() });
+        try {
+          writeUrlBookmarks(bookmarks);
+          bookmarkSaveBtn.textContent = '登録しました';
+          if (bookmarkSavedTimer) clearTimeout(bookmarkSavedTimer);
+          bookmarkSavedTimer = setTimeout(function () {
+            bookmarkSaveBtn.textContent = 'ブックマーク';
+            bookmarkSavedTimer = null;
+          }, 1200);
+        } catch (error) {
+          console.warn('ブックマークを保存できませんでした:', error);
+        }
+      }
+
+      function renderUrlBookmarks() {
+        const bookmarks = getUrlBookmarks();
+        bookmarkList.replaceChildren();
+        bookmarkEmpty.hidden = bookmarks.length > 0;
+
+        bookmarks.forEach((item, index) => {
+          const row = document.createElement('article');
+          row.className = 'historyEntry bookmarkEntry';
+          row.tabIndex = 0;
+          row.setAttribute('role', 'button');
+          row.setAttribute('aria-label', `${index + 1}番 ${item.title || item.url} を呼び出す`);
+          const info = document.createElement('div');
+          info.className = 'historyEntryInfo';
+          const name = document.createElement('strong');
+          const number = document.createElement('span');
+          number.className = 'historyEntryNumber';
+          number.textContent = String(index + 1);
+          name.textContent = item.title || item.url;
+          const url = document.createElement('small');
+          url.textContent = item.url;
+          const date = document.createElement('small');
+          date.textContent = `保存: ${new Date(Number(item.savedAt) || 0).toLocaleString('ja-JP')}`;
+          info.append(name, url, date);
+
+          const actions = document.createElement('div');
+          actions.className = 'bookmarkEntryActions';
+          const callBookmark = function () {
+            urlInput.value = item.url;
+            setSourceMode('url');
+            syncUrlTitleInputs(item.title || '');
+            updateSourceButtonLabels();
+            closeUrlBookmarkDialog();
+          };
+          row.addEventListener('click', function (event) {
+            if (event.target.closest('button')) return;
+            callBookmark();
+          });
+          row.addEventListener('keydown', function (event) {
+            if (event.target !== row || (event.key !== 'Enter' && event.key !== ' ')) return;
+            event.preventDefault();
+            callBookmark();
+          });
+          const remove = document.createElement('button');
+          remove.className = 'bookmarkRemoveBtn';
+          remove.type = 'button';
+          remove.textContent = '削除';
+          remove.addEventListener('click', function () {
+            const latest = getUrlBookmarks().filter(bookmark => bookmark.url !== item.url);
+            try {
+              writeUrlBookmarks(latest);
+            } catch (error) {
+              console.warn('ブックマークを削除できませんでした:', error);
+            }
+            renderUrlBookmarks();
+          });
+          actions.append(remove);
+          row.append(number, info, actions);
+          bookmarkList.appendChild(row);
+        });
+      }
+
+      function closeUrlBookmarkDialog() {
+        bookmarkDialog.hidden = true;
+      }
+
+      bookmarksBtn.addEventListener('click', function () {
+        renderUrlBookmarks();
+        bookmarkDialog.hidden = false;
+      });
+      bookmarkSaveBtn.addEventListener('click', saveCurrentUrlBookmark);
+      document.getElementById('bookmarkDialogCloseBtn').addEventListener('click', closeUrlBookmarkDialog);
+      bookmarkDialog.addEventListener('click', function (event) {
+        if (event.target === bookmarkDialog) closeUrlBookmarkDialog();
       });
 
       function isSameArchiveName(nameA, nameB) {
@@ -1399,6 +1542,7 @@
             pageName: activeArchivePageNames[idx] || '',
             updatedAt: Date.now()
           }));
+          pruneArchiveHistory();
         } catch (error) {
           console.warn('読書位置を保存できませんでした:', error);
         }
@@ -1658,7 +1802,7 @@
           pendingUrlNext = 0;
           document.getElementById('errorContainer').textContent = `${urlComicTitle || 'URL画像'} を ${images.length} 枚読み込みました。`;
           menuDownloadBtn.disabled = false;
-          menuDownloadBtn.textContent = 'ZIP保存';
+          menuDownloadBtn.textContent = '保存';
         } catch (error) {
           urlComicLoading = false;
           pendingUrlNext = 0;
@@ -1670,7 +1814,7 @@
           hideReaderStatus();
           if (readerOpened) {
             menuDownloadBtn.disabled = false;
-            menuDownloadBtn.textContent = 'ZIP保存';
+            menuDownloadBtn.textContent = '保存';
           }
           setSourceLoading(false);
           updateSourceButtonLabels();
@@ -2313,6 +2457,11 @@
       });
       // keyboard
       document.addEventListener('keydown', function (e) {
+        if (!bookmarkDialog.hidden && e.key === 'Escape') {
+          closeUrlBookmarkDialog();
+          e.stopPropagation();
+          return;
+        }
         if (!nextUrlDialog.hidden && e.key === 'Escape') {
           closeNextUrlDialog();
           e.stopPropagation();
@@ -2417,7 +2566,14 @@
 
       // Menu panel
       menuBtn.addEventListener('click', function (e) { e.stopPropagation(); openMenu(); });
-      function openMenu() { readerZipNameSetting.hidden = activeSource !== 'url'; readerZipNameInput.value = urlTitleInput.value; menuPanel.style.display = 'block'; menuPanel.setAttribute('aria-hidden', 'false'); }
+      function openMenu() {
+        const isUrlMode = activeSource === 'url';
+        readerZipNameSetting.hidden = !isUrlMode;
+        bookmarkSaveBtn.hidden = !isUrlMode;
+        readerZipNameInput.value = urlTitleInput.value;
+        menuPanel.style.display = 'block';
+        menuPanel.setAttribute('aria-hidden', 'false');
+      }
       function closeMenu() { menuPanel.style.display = 'none'; menuPanel.setAttribute('aria-hidden', 'true'); }
       menuCloseBtn.addEventListener('click', function (e) { e.stopPropagation(); closeMenu(); });
       menuDownloadBtn.addEventListener('click', async function (e) {
@@ -2451,7 +2607,7 @@
         } finally {
           hideReaderStatus();
           menuDownloadBtn.disabled = false;
-          menuDownloadBtn.textContent = 'ZIP保存';
+          menuDownloadBtn.textContent = '保存';
         }
       });
 
